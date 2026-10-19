@@ -1,14 +1,19 @@
 # Pocket Day CRM
 
-## GitHub Pages deployment
+## Live sites
 
-Open [Settings → Pages](https://github.com/ah59546-gif/test/settings/pages), select **GitHub Actions** as the publishing source, then run **Deploy Pocket Day** from [Actions](https://github.com/ah59546-gif/test/actions).
+- GitHub Pages: https://ah59546-gif.github.io/test/
+- Sites: https://pocket-investor-crm-20261014.pocketcompany.chatgpt.site/
 
-The workflow publishes `dist/`. The expected address is https://ah59546-gif.github.io/test/ after a successful deployment.
+## Automatic GitHub deployment
+
+Every push to `main` runs `.github/workflows/deploy-pages.yml`, checks the application's JavaScript, and publishes `dist/` to GitHub Pages. The repository's Pages source must be set to **GitHub Actions**.
+
+Follow `AGENTS.md` when editing this project. A requested application change includes synchronizing GitHub and publishing both live sites, unless explicitly requested otherwise.
 
 ## Data storage
 
-Manual edits are stored in browser localStorage. Existing data on the Sites domain does not automatically transfer to the GitHub Pages domain.
+Manual edits are stored in browser localStorage. Existing data on the Sites domain does not automatically transfer to the GitHub Pages domain. Deployment updates code, not records saved in other browsers or domains.
 
 ## Local preview
 
