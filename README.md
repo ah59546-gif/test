@@ -1,19 +1,15 @@
 # Pocket Day CRM
 
-Pocket Day investment relationship workspace.
+## GitHub Pages deployment
 
-## Publish with GitHub Pages
+Open [Settings → Pages](https://github.com/ah59546-gif/test/settings/pages), select **GitHub Actions** as the publishing source, then run **Deploy Pocket Day** from [Actions](https://github.com/ah59546-gif/test/actions).
 
-1. Open this repository's **Settings → Pages**.
-2. Set **Source** to **GitHub Actions**.
-3. Open **Actions → Deploy Pocket Day → Run workflow** (or push a change to `main`).
-
-The workflow publishes the static files in `dist/`.
+The workflow publishes `dist/`. The expected address is https://ah59546-gif.github.io/test/ after a successful deployment.
 
 ## Data storage
 
-This app stores manual edits in browser localStorage. Data from a different domain is not automatically transferred.
+Manual edits are stored in browser localStorage. Existing data on the Sites domain does not automatically transfer to the GitHub Pages domain.
 
 ## Local preview
 
-Run `node preview-server.mjs` and open `http://127.0.0.1:4173`.
+Run `node preview-server.mjs` and open http://127.0.0.1:4173.
