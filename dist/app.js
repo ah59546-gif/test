@@ -200,6 +200,25 @@ function researchRecord(investorId,companyId="",companyName=""){
   const latest=related[0];
   return {key,investorId,companyId,companyName,followupStatus:latest?.followupStatus||"미확인",investmentStatus:latest?.investmentStatus||"미확인",checkedAt:latest?.updatedAt||"",source:latest?"미팅 이력":"",memo:latest?.memo||""};
 }
+function researchMeetingStatuses(record){return {followupStatus:record.followupStatus==="미확인"?"미정":record.followupStatus,investmentStatus:record.investmentStatus==="미확인"||record.investmentStatus==="관심"?"검토 전":record.investmentStatus}}
+function latestPocketdayMeeting(investorId,companyName){
+  const person=inv(investorId);
+  const normalizedCompany=normalizeCompanyName(companyName);
+  return pocketdaySchedule.filter(event=>(event.investors||[]).some(value=>pocketdayInvestorDetails(value).name===person?.name)&&(event.companies||[]).some(value=>normalizeCompanyName(value)===normalizedCompany)).sort((a,b)=>b.date.localeCompare(a.date))[0];
+}
+function syncResearchToMeeting(record){
+  let company=record.companyId?com(record.companyId):db.companies.find(item=>normalizeCompanyName(item.name)===normalizeCompanyName(record.companyName));
+  const event=latestPocketdayMeeting(record.investorId,record.companyName);
+  if(!company){company={id:`com-${Date.now()}`,name:record.companyName,ceo:"",sector:"",stage:"",description:"",email:"",phone:"",founded:"",tips:"",venture:"",smallBusiness:"",pocketdayIds:event?.id?[event.id]:[],irFiles:[]};db.companies.unshift(company)}
+  const related=db.meetings.filter(meeting=>meeting.investorId===record.investorId&&meeting.companyId===company.id).sort((a,b)=>b.date.localeCompare(a.date));
+  const meeting=related[0];
+  const statuses=researchMeetingStatuses(record);
+  if(meeting){Object.assign(meeting,statuses,{updatedAt:today(),memo:record.memo||meeting.memo||""})}
+  else db.meetings.unshift({id:`mtg-research-${Date.now()}`,companyId:company.id,investorId:record.investorId,date:event?.date||today(),type:event?.operationType||"포켓데이",...statuses,followupDate:"",amount:0,paymentStatus:"미지급",updatedAt:today(),memo:record.memo||"",source:"만난 기업 후속 현황"});
+  record.companyId=company.id;
+  record.source="미팅 이력 자동 연결";
+  return meeting?"updated":"created";
+}
 function researchNeedsCheck(record){return record.followupStatus==="미확인"||record.investmentStatus==="미확인"}
 function researchStatusTone(value){return value==="투자 완료"||value==="완료"?"complete":["진행","진행 중","검토 중"].includes(value)?"progress":["예정","관심"].includes(value)?"scheduled":value==="미확인"?"unknown":"neutral"}
 function researchStatusBadge(value){return `<span class="research-status ${researchStatusTone(value)}">${esc(value||"미확인")}</span>`}
@@ -330,7 +349,7 @@ document.addEventListener("click",e=>{const add=e.target.closest("[data-add-pock
 document.addEventListener("click",e=>{if(e.target.closest("[data-add-company]"))openCompanyModal()});
 document.addEventListener("click",e=>{const edit=e.target.closest("[data-edit-research]");if(edit){openResearchModal(edit.dataset.investorId,edit.dataset.companyName,edit.dataset.companyId);return}const filter=e.target.closest("[data-research-filter]");if(filter){document.querySelectorAll("[data-research-filter]").forEach(button=>button.classList.toggle("active",button===filter));applyResearchFilters()}});
 document.addEventListener("input",e=>{if(e.target.matches("[data-research-search]"))applyResearchFilters()});
-document.addEventListener("change",e=>{const select=e.target.closest("[data-inline-research]");if(!select)return;const {investorId,companyId,companyName,field}=select.dataset;const current=researchRecord(investorId,companyId,companyName);const key=researchKey(investorId,companyId,companyName);db.connectionResearch[key]={investorId,companyId,companyName,followupStatus:current.followupStatus,investmentStatus:current.investmentStatus,checkedAt:current.checkedAt,source:current.source,memo:current.memo,updatedAt:new Date().toISOString(),[field]:select.value};save();showToast(field==="followupStatus"?"후속 미팅 상태를 저장했습니다.":"투자 상태를 저장했습니다.");render()});
+document.addEventListener("change",e=>{const select=e.target.closest("[data-inline-research]");if(!select)return;const {investorId,companyId,companyName,field}=select.dataset;const current=researchRecord(investorId,companyId,companyName);const key=researchKey(investorId,companyId,companyName);const record={investorId,companyId,companyName,followupStatus:current.followupStatus,investmentStatus:current.investmentStatus,checkedAt:current.checkedAt,source:current.source,memo:current.memo,updatedAt:new Date().toISOString(),[field]:select.value};syncResearchToMeeting(record);const syncedKey=researchKey(record.investorId,record.companyId,record.companyName);if(syncedKey!==key)delete db.connectionResearch[key];db.connectionResearch[syncedKey]=record;save();fillSelects();showToast(field==="followupStatus"?"후속 미팅 상태를 저장하고 미팅 이력에 반영했습니다.":"투자 상태를 저장하고 미팅 이력에 반영했습니다.");render()});
 document.addEventListener("change",e=>{const followup=e.target.closest("[data-followup-id]");const payment=e.target.closest("[data-payment-id]");const control=followup||payment;if(!control)return;const meeting=db.meetings.find(item=>item.id===(followup?.dataset.followupId||payment?.dataset.paymentId));if(!meeting)return;if(followup)meeting.followupStatus=followup.value;if(payment)meeting.paymentStatus=payment.value;meeting.updatedAt=today();save();showToast(followup?"후속 상태를 저장했습니다.":"지급 상태를 저장했습니다.")});
 document.querySelectorAll("[data-close-pocketday-modal]").forEach(button=>button.onclick=closePocketdayModal);
 document.getElementById("showOperationTypeAdd").onclick=()=>{const panel=document.getElementById("operationTypeAdd");panel.hidden=!panel.hidden;if(!panel.hidden)document.getElementById("operationTypeName").focus()};
@@ -341,6 +360,6 @@ document.getElementById("pocketdayModal").onclick=e=>{if(e.target.id==="pocketda
 document.getElementById("researchModal").onclick=e=>{if(e.target.id==="researchModal")closeResearchModal()};
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closePocketdayModal()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeResearchModal()});
-document.getElementById("researchForm").onsubmit=e=>{e.preventDefault();const form=e.currentTarget;const x=Object.fromEntries(new FormData(form).entries());const key=researchKey(x.investorId,x.companyId,x.companyName);const current=researchRecord(x.investorId,x.companyId,x.companyName);db.connectionResearch[key]={investorId:x.investorId,companyId:x.companyId,companyName:x.companyName,followupStatus:x.followupStatus,investmentStatus:x.investmentStatus,checkedAt:current.checkedAt,source:current.source,memo:x.memo.trim(),updatedAt:today()};save();form.reset();closeResearchModal();showToast("기업 후속 현황을 저장했습니다.");render()};
+document.getElementById("researchForm").onsubmit=e=>{e.preventDefault();const form=e.currentTarget;const x=Object.fromEntries(new FormData(form).entries());const key=researchKey(x.investorId,x.companyId,x.companyName);const current=researchRecord(x.investorId,x.companyId,x.companyName);const record={investorId:x.investorId,companyId:x.companyId,companyName:x.companyName,followupStatus:x.followupStatus,investmentStatus:x.investmentStatus,checkedAt:current.checkedAt,source:current.source,memo:x.memo.trim(),updatedAt:today()};syncResearchToMeeting(record);const syncedKey=researchKey(record.investorId,record.companyId,record.companyName);if(syncedKey!==key)delete db.connectionResearch[key];db.connectionResearch[syncedKey]=record;save();fillSelects();form.reset();closeResearchModal();showToast("기업 후속 현황을 저장하고 미팅 이력에 반영했습니다.");render()};
 document.getElementById("pocketdayForm").onsubmit=e=>{e.preventDefault();const form=e.currentTarget;const x=Object.fromEntries(new FormData(form).entries());const eventId=x.eventId||`manual-${Date.now()}`;const values={id:eventId,round:x.round?Number(x.round):null,date:x.date.trim(),operationType:x.operationType,status:x.status,companies:x.companies.split(/[,\n]/).map(value=>value.trim()).filter(Boolean),investors:x.investors.split(/\n/).map(value=>value.trim()).filter(Boolean)};if(x.eventId){const index=pocketdaySchedule.findIndex(event=>event.id===x.eventId);if(index<0){showToast("수정할 일정을 찾지 못했습니다.");return}pocketdaySchedule[index]=values}else{pocketdaySchedule.push(values)}pocketdaySchedule.sort((a,b)=>b.date.localeCompare(a.date));savePocketdaySchedule();form.reset();closePocketdayModal();showToast(x.eventId?"포켓데이 일정을 수정했습니다.":"포켓데이 일정을 추가했습니다.");render()};
 
