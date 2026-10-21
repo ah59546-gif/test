@@ -144,6 +144,7 @@ td{padding:12px 14px;border-top:1px solid var(--line);font-size:9px;white-space:
 .form-grid label{display:grid;gap:5px;color:var(--muted);font-size:9px}
 .form-grid input,.form-grid select,.form-grid textarea{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;color:var(--ink);background:#fbfcff;outline:0;font-size:10px}
 .form-grid input:focus,.form-grid select:focus,.form-grid textarea:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(49,89,245,.10)}
+.operation-type-field{display:grid;gap:5px;color:var(--muted);font-size:9px}.operation-type-row,.operation-type-add{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px}.operation-type-row button,.operation-type-add button{padding:0 11px;border:1px solid #b9c8ee;border-radius:8px;color:#3159d9;background:#fff;font-size:9px;font-weight:800;white-space:nowrap}.operation-type-row button:hover,.operation-type-add button:hover{border-color:#315df6;background:#f1f5ff}.operation-type-add[hidden]{display:none}.operation-type-add{margin-top:2px;padding:8px;border:1px solid #dce4f4;border-radius:9px;background:#f7f9ff}
 .form-wide{grid-column:1/-1}
 .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
 .drawer-backdrop{place-items:stretch end;padding:0}
