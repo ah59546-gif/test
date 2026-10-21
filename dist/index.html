@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./styles.css?v=20261021-typography-default" />
+    <link rel="stylesheet" href="./styles.css?v=20261021-operation-categories" />
   </head>
   <body>
     <section class="portal-screen" id="portalRoot">
@@ -207,7 +207,11 @@
             <label><span>회차</span><input name="round" type="number" min="1" placeholder="예: 91" /></label>
             <label><span>상태 *</span><select name="status" required><option>예정</option><option>완료</option></select></label>
             <label><span>날짜 *</span><input name="date" required placeholder="예: 2026. 11. 26. (목)" /></label>
-            <label><span>운영구분</span><select name="operationType" required><option>포켓데이</option><option>외부행사</option></select></label>
+            <div class="operation-type-field">
+              <label for="pocketdayOperationType">운영구분</label>
+              <div class="operation-type-row"><select name="operationType" id="pocketdayOperationType" required></select><button type="button" id="showOperationTypeAdd">＋ 추가</button></div>
+              <div class="operation-type-add" id="operationTypeAdd" hidden><input id="operationTypeName" type="text" maxlength="30" placeholder="새 카테고리명" /><button type="button" id="saveOperationType">등록</button></div>
+            </div>
             <label class="form-wide"><span>참여 기업</span><textarea name="companies" rows="3" placeholder="기업명을 쉼표로 구분해 주세요."></textarea></label>
             <label class="form-wide"><span>참여 심사역</span><textarea name="investors" rows="4" placeholder="심사역을 한 줄에 한 명씩 입력해 주세요."></textarea></label>
           </div>
@@ -225,7 +229,7 @@
 
     <script src="./houses.js"></script>
     <script src="./pocketday-archive.js"></script>
-    <script src="./app.js?v=20261021-pocketday-operation-type"></script>
+    <script src="./app.js?v=20261021-operation-categories"></script>
   </body>
 </html>
 
