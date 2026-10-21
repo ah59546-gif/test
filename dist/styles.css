@@ -234,7 +234,7 @@ td{padding:12px 14px;border-top:1px solid var(--line);font-size:13.5px;white-spa
 .role-card p{min-height:64px;margin:0;color:#6b7690;font-size:16.5px;line-height:1.75}
 .role-card ul{display:grid;gap:9px;margin:18px 0 25px;padding:0;list-style:none;color:#34415f;font-size:15px;font-weight:700}
 .role-card li:before{content:"✓";margin-right:8px;color:#00a77b}
-.role-card button{width:100%;display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding:14px 16px;border:0;border-radius:11px;color:#fff;background:var(--card-accent,#3159f5);font-size:16.5px;font-weight:700}
+.role-card button{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:auto;padding:14px 13px;border:0;border-radius:11px;color:#fff;background:var(--card-accent,#3159f5);font-size:16.5px;font-weight:700;white-space:nowrap}
 .role-card button b{font-size:30px;line-height:1}
 .company-card{--card-accent:#3159f5;--card-soft:#e8eeff}
 .investor-card{--card-accent:#00a77b;--card-soft:#e4f8f2}
