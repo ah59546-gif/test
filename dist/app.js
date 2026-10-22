@@ -219,6 +219,13 @@ function syncResearchToMeeting(record){
   record.source="미팅 이력 자동 연결";
   return meeting?"updated":"created";
 }
+const researchMeetingSyncKey="pocket-crm-research-meeting-sync-v1";
+if(!localStorage.getItem(researchMeetingSyncKey)){
+  const records=Object.entries(db.connectionResearch);
+  records.forEach(([key,stored])=>{if(!stored?.investorId||(!stored.companyId&&!stored.companyName))return;const record={companyName:"",followupStatus:"미확인",investmentStatus:"미확인",memo:"",...stored};syncResearchToMeeting(record);const syncedKey=researchKey(record.investorId,record.companyId,record.companyName);if(syncedKey!==key)delete db.connectionResearch[key];db.connectionResearch[syncedKey]=record});
+  if(records.length)save();
+  localStorage.setItem(researchMeetingSyncKey,"1");
+}
 function researchNeedsCheck(record){return record.followupStatus==="미확인"||record.investmentStatus==="미확인"}
 function researchStatusTone(value){return value==="투자 완료"||value==="완료"?"complete":["진행","진행 중","검토 중"].includes(value)?"progress":["예정","관심"].includes(value)?"scheduled":value==="미확인"?"unknown":"neutral"}
 function researchStatusBadge(value){return `<span class="research-status ${researchStatusTone(value)}">${esc(value||"미확인")}</span>`}
