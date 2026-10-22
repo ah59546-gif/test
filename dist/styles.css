@@ -1,5 +1,5 @@
 :root {
-  /* Typography uses the original 100% visual baseline. */
+  /* Keep the CRM comfortably readable on desktop-sized displays. */
   --ink:#17213d; --muted:#68738d; --paper:#f4f6fb; --surface:#fff; --line:#e1e6f2;
   --green:#3159f5; --green-dark:#2342c4; --mint:#e7edff; --lime:#a9bdff; --blue:#dfe7ff;
   --amber:#fff0cf; --red:#fae5e1; --shadow:0 20px 60px rgba(31,49,105,.12);
@@ -7,7 +7,7 @@
 
 *{box-sizing:border-box}
  html{min-width:320px;background:var(--paper)}
- body{margin:0;color:var(--ink);background:var(--paper);font-family:"Noto Sans KR",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+ body{margin:0;color:var(--ink);background:var(--paper);font-family:"Noto Sans KR",system-ui,sans-serif;-webkit-font-smoothing:antialiased;zoom:1.15}
 
 button,input,select,textarea{font:inherit}
 button{cursor:pointer}
