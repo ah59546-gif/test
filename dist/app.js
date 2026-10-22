@@ -213,6 +213,11 @@ function latestPocketdayMeeting(investorId,companyName){
   return pocketdaySchedule.filter(event=>(event.investors||[]).some(value=>pocketdayInvestorDetails(value).name===person?.name)&&(event.companies||[]).some(value=>normalizeCompanyName(value)===normalizedCompany)).sort((a,b)=>b.date.localeCompare(a.date))[0];
 }
 function syncResearchToMeeting(record){
+  const isBlankResearch=record.followupStatus==="미확인"&&record.investmentStatus==="미확인"&&!String(record.memo||"").trim();
+  if(isBlankResearch){
+    db.meetings=db.meetings.filter(meeting=>!(meeting.source==="만난 기업 후속 현황"&&meeting.investorId===record.investorId&&(record.companyId?meeting.companyId===record.companyId:normalizeCompanyName(com(meeting.companyId)?.name)===normalizeCompanyName(record.companyName))));
+    return "ignored";
+  }
   let company=record.companyId?com(record.companyId):db.companies.find(item=>normalizeCompanyName(item.name)===normalizeCompanyName(record.companyName));
   const event=latestPocketdayMeeting(record.investorId,record.companyName);
   if(!company){company={id:`com-${Date.now()}`,name:record.companyName,ceo:"",sector:"",stage:"",description:"",email:"",phone:"",founded:"",tips:"",venture:"",smallBusiness:"",pocketdayIds:event?.id?[event.id]:[],irFiles:[]};db.companies.unshift(company)}
@@ -230,6 +235,12 @@ if(!localStorage.getItem(researchMeetingBackfillCleanupKey)){
   const remaining=db.meetings.filter(meeting=>!(meeting.source==="만난 기업 후속 현황"&&String(meeting.id).startsWith("mtg-research-")));
   if(remaining.length!==db.meetings.length){db.meetings=remaining;save()}
   localStorage.setItem(researchMeetingBackfillCleanupKey,"1");
+}
+const blankResearchMeetingCleanupKey="pocket-crm-blank-research-meeting-cleanup-v2";
+if(!localStorage.getItem(blankResearchMeetingCleanupKey)){
+  const remaining=db.meetings.filter(meeting=>!(meeting.source==="만난 기업 후속 현황"&&meeting.followupStatus==="미정"&&meeting.investmentStatus==="검토 전"&&!String(meeting.memo||"").trim()&&!meeting.followupDate&&!Number(meeting.amount||0)));
+  if(remaining.length!==db.meetings.length){db.meetings=remaining;save()}
+  localStorage.setItem(blankResearchMeetingCleanupKey,"1");
 }
 function researchNeedsCheck(record){return record.followupStatus==="미확인"||record.investmentStatus==="미확인"}
 function researchStatusTone(value){return value==="투자 완료"||value==="완료"?"complete":["진행","진행 중","검토 중"].includes(value)?"progress":["예정","관심"].includes(value)?"scheduled":value==="미확인"?"unknown":"neutral"}
