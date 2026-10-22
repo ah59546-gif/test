@@ -10,6 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="./styles.css?v=20261022-global-text-scale" />
+    <style>.nav-item[data-view="pipeline"]{display:none!important}</style>
   </head>
   <body>
     <section class="portal-screen" id="portalRoot">
@@ -73,7 +74,6 @@
 
           <p class="nav-label">LINKED VIEWS</p>
           <button class="nav-item" data-view="followups"><i>↗</i><span>후속 미팅</span><b id="followupCountNav">0</b></button>
-          <button class="nav-item" data-view="pipeline"><i>◫</i><span>투자 파이프라인</span></button>
         </nav>
 
         <div class="source-note" id="sourceNote">
@@ -229,7 +229,7 @@
 
     <script src="./houses.js"></script>
     <script src="./pocketday-archive.js"></script>
-  <script src="./app.js?v=20261022-hide-duplicate-linkage-nav"></script>
+  <script src="./app.js?v=20261022-hide-pipeline-nav"></script>
   </body>
 </html>
 
