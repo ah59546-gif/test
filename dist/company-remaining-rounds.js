@@ -1,8 +1,10 @@
 (()=>{
   const root=document.getElementById("viewRoot");
   const storageKey="pocket-crm-company-remaining-rounds-v1";
+  const companyTypeStorageKey="pocket-crm-company-types-v1";
   const adminMetaStorageKey="pocket-crm-admin-company-terms-v1";
   const statuses=["-","대기","완료","진행중"];
+  const companyTypes=["포켓","외부"];
   if(!root)return;
 
   function readStatuses(){
@@ -14,6 +16,17 @@
     if(status==="-")delete saved[companyId];
     else saved[companyId]=status;
     localStorage.setItem(storageKey,JSON.stringify(saved));
+  }
+
+  function readCompanyTypes(){
+    try{return JSON.parse(localStorage.getItem(companyTypeStorageKey)||"{}")}catch{return {}}
+  }
+
+  function saveCompanyType(companyId,type){
+    if(!companyId||!companyTypes.includes(type))return;
+    const saved=readCompanyTypes();
+    saved[companyId]=type;
+    localStorage.setItem(companyTypeStorageKey,JSON.stringify(saved));
   }
 
   function readAdminMeta(){
@@ -54,19 +67,46 @@
       stack.append(logo);
     }
 
+    let metaRow=stack.querySelector(".company-detail-meta-row");
+    if(!metaRow){
+      metaRow=document.createElement("div");
+      metaRow.className="company-detail-meta-row";
+      stack.append(metaRow);
+    }
+
     let statusCard=stack.querySelector(".company-detail-remaining-status");
     if(!statusCard){
       statusCard=document.createElement("div");
       statusCard.className="company-detail-remaining-status";
       statusCard.innerHTML="<small>잔여회차</small><strong>-</strong>";
-      stack.append(statusCard);
     }
+    if(statusCard.parentElement!==metaRow)metaRow.prepend(statusCard);
 
     const saved=readStatuses()[companyId];
     const status=statuses.includes(saved)?saved:"-";
     statusCard.dataset.state=status;
     const statusValue=statusCard.querySelector("strong");
     if(statusValue.textContent!==status)statusValue.textContent=status;
+
+    let typeCard=metaRow.querySelector(".company-detail-type-select");
+    if(!typeCard){
+      typeCard=document.createElement("div");
+      typeCard.className="company-detail-type-select";
+      typeCard.innerHTML=`<small>기업 구분</small><div>${companyTypes.map(type=>`<button type="button" data-company-type="${type}" aria-pressed="false">${type}</button>`).join("")}</div>`;
+      typeCard.addEventListener("click",event=>{
+        const button=event.target.closest("[data-company-type]");
+        if(!button)return;
+        saveCompanyType(currentCompanyId(),button.dataset.companyType);
+        syncCompanyDetailStatus();
+      });
+      metaRow.append(typeCard);
+    }
+    const savedType=readCompanyTypes()[companyId];
+    const companyType=companyTypes.includes(savedType)?savedType:"포켓";
+    typeCard.querySelectorAll("[data-company-type]").forEach(button=>{
+      const selected=button.dataset.companyType===companyType;
+      if(button.getAttribute("aria-pressed")!==String(selected))button.setAttribute("aria-pressed",String(selected));
+    });
   }
 
   function syncAdminCompanyDetails(){
@@ -181,6 +221,7 @@
   new MutationObserver(syncAll).observe(root,{childList:true,subtree:true});
   window.addEventListener("storage",event=>{
     if(event.key===storageKey)syncCompanyDetailStatus();
+    if(event.key===companyTypeStorageKey)syncCompanyDetailStatus();
     if(event.key===adminMetaStorageKey)syncAdminCompanyDetails();
   });
   ensureAdminMetaFields();

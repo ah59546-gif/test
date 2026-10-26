@@ -29,12 +29,19 @@
 .company-remaining-select[data-state="완료"]{color:#087b5d;border-color:#aee1cf;background:#e8f7f1}
 .company-remaining-select[data-state="진행중"]{color:#3159d9;border-color:#bccafa;background:#eef2ff}
 .company-detail-logo-stack{display:grid;flex:none;justify-items:center;gap:9px}
+.company-detail-meta-row{display:grid;grid-template-columns:104px 104px;gap:8px}
 .company-detail-remaining-status{width:104px;display:grid;justify-items:center;gap:3px;padding:8px 10px;border:1px solid #dfe5ef;border-radius:11px;color:#56637b;background:#f8f9fc;font-weight:800}
 .company-detail-remaining-status small{color:#8994a8;font-size:9px!important;font-weight:700}
 .company-detail-remaining-status strong{font-size:12px}
 .company-detail-remaining-status[data-state="대기"]{color:#9a6b00;border-color:#f0d58f;background:#fff7df}
 .company-detail-remaining-status[data-state="완료"]{color:#087b5d;border-color:#aee1cf;background:#e8f7f1}
 .company-detail-remaining-status[data-state="진행중"]{color:#3159d9;border-color:#bccafa;background:#eef2ff}
+.company-detail-type-select{width:104px;display:grid;align-content:center;justify-items:center;gap:5px;padding:7px 6px;border:1px solid #dfe5ef;border-radius:11px;background:#f8f9fc}
+.company-detail-type-select>small{color:#8994a8;font-size:9px!important;font-weight:700}
+.company-detail-type-select>div{display:grid;grid-template-columns:1fr 1fr;width:100%;padding:2px;border-radius:7px;background:#e9edf4}
+.company-detail-type-select button{min-width:0;padding:4px 2px!important;border:0;border-radius:5px;color:#748097;background:transparent;font-size:9px!important;font-weight:800;cursor:pointer}
+.company-detail-type-select button[aria-pressed="true"]{color:#fff;background:#3159f5;box-shadow:0 2px 6px rgba(49,89,245,.2)}
+.company-detail-type-select button:focus-visible{outline:2px solid #3159f5;outline-offset:2px}
 .company-admin-contract-amount strong,.company-admin-success-fee strong{white-space:normal;line-height:1.45;overflow-wrap:anywhere}
 .company-admin-investment strong{font-weight:800}
 .investor-detail-stats:has([data-participation-stat]){grid-template-columns:repeat(4,minmax(0,1fr))}
@@ -53,6 +60,8 @@
   .content :where(span,em,th){font-size:12px!important}
   .investor-detail-stats:has([data-participation-stat]){grid-template-columns:1fr}
   .company-detail-logo-stack{justify-items:start}
+  .company-detail-meta-row{grid-template-columns:76px 76px}
   .company-detail-remaining-status{width:76px}
+  .company-detail-type-select{width:76px}
 }
 
