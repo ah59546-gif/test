@@ -1,0 +1,33 @@
+/* Keep headings and large KPI figures intact while bringing small UI copy up
+   to the readable scale used by the investor list. */
+.sidebar .nav-item{font-size:13px}
+.sidebar .nav-label,.sidebar .brand span,.sidebar .source-note strong,.sidebar .profile strong{font-size:11px}
+.sidebar .source-note p,.sidebar .profile span{font-size:10px}
+.topbar :where(button,input,kbd){font-size:12px}
+.topbar .search-box>span{font-size:18px}
+
+.content :where(p,label,time,summary,li,button,input,select,textarea){font-size:12px!important}
+.content :where(span,em){font-size:11px!important}
+.content :where(small){font-size:10px!important}
+.content th{font-size:11px!important}
+.content td{font-size:12px!important}
+.content :where(.entity-link,.link-button,.text-button){font-size:12px!important}
+.content :where(.tag,.badge,.operator-type,.research-status,.research-inline-select){font-size:10px!important}
+.content .entity-mark{font-size:11px!important}
+.content .search-box>span{font-size:18px!important}
+.content .pocketday-filter-result>span{font-size:15px!important}
+
+.modal-backdrop :where(p,label,time,summary,li,button,input,select,textarea){font-size:12px!important}
+.modal-backdrop :where(label>span,small){font-size:11px!important}
+.drawer :where(p,label,time,summary,li,button,input,select,textarea){font-size:12px!important}
+.drawer :where(span,small){font-size:11px!important}
+
+.portal-screen :where(.portal-lead,.role-card p,.role-card li,.role-card button){font-size:13px!important}
+.portal-screen :where(.portal-eyebrow,.portal-pills span,.role-kicker,.portal-footer){font-size:11px!important}
+
+@media(max-width:760px){
+  .sidebar .nav-item{font-size:14px}
+  .content :where(p,label,time,summary,li,button,input,select,textarea,td){font-size:13px!important}
+  .content :where(span,em,th){font-size:12px!important}
+}
+
