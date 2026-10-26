@@ -1,0 +1,31 @@
+.db-table:has(tbody [data-investor]) th{
+  padding:13px 16px;
+  font-size:11px;
+}
+
+.db-table:has(tbody [data-investor]) td{
+  padding:15px 16px;
+  font-size:12px;
+}
+
+.db-table:has(tbody [data-investor]) .entity-link{
+  font-size:12px;
+}
+
+.db-table:has(tbody [data-investor]) .entity-mark{
+  width:36px;
+  height:36px;
+  border-radius:10px;
+  font-size:11px;
+}
+
+.db-table:has(tbody [data-investor]) .entity-cell{
+  gap:11px;
+}
+
+.db-table:has(tbody [data-investor]) .entity-cell small,
+.db-table:has(tbody [data-investor]) .operator-type,
+.db-table:has(tbody [data-investor]) .tag{
+  font-size:10px;
+}
+
