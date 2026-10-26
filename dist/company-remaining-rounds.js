@@ -1,6 +1,7 @@
 (()=>{
   const root=document.getElementById("viewRoot");
   const storageKey="pocket-crm-company-remaining-rounds-v1";
+  const adminMetaStorageKey="pocket-crm-admin-company-terms-v1";
   const statuses=["-","대기","완료","진행중"];
   if(!root)return;
 
@@ -13,6 +14,16 @@
     if(status==="-")delete saved[companyId];
     else saved[companyId]=status;
     localStorage.setItem(storageKey,JSON.stringify(saved));
+  }
+
+  function readAdminMeta(){
+    try{return JSON.parse(localStorage.getItem(adminMetaStorageKey)||"{}")}catch{return {}}
+  }
+
+  function saveAdminMeta(companyId,values){
+    const saved=readAdminMeta();
+    saved[companyId]={investmentStatus:values.investmentStatus||"-",contractTerms:String(values.contractTerms||"").trim()};
+    localStorage.setItem(adminMetaStorageKey,JSON.stringify(saved));
   }
 
   function currentCompanyId(){
@@ -50,6 +61,58 @@
     statusCard.dataset.state=status;
     const statusValue=statusCard.querySelector("strong");
     if(statusValue.textContent!==status)statusValue.textContent=status;
+  }
+
+  function syncAdminCompanyDetails(){
+    const grid=root.querySelector(".company-detail-page .company-info-grid");
+    const editButton=root.querySelector(".company-detail-page [data-edit-company]");
+    if(!grid||!editButton)return;
+    const companyId=editButton.dataset.editCompany;
+    const meta=readAdminMeta()[companyId]||{};
+    const values={investmentStatus:meta.investmentStatus||"-",contractTerms:meta.contractTerms||"-"};
+    const fields=[
+      {key:"investmentStatus",icon:"✓",label:"투자 여부",className:"company-admin-investment"},
+      {key:"contractTerms",icon:"▧",label:"계약조건",className:"company-admin-contract"}
+    ];
+
+    fields.forEach(field=>{
+      let card=grid.querySelector(`[data-admin-company-field="${field.key}"]`);
+      if(!card){
+        card=document.createElement("div");
+        card.className=field.className;
+        card.dataset.adminCompanyField=field.key;
+        card.innerHTML=`<i>${field.icon}</i><span><small>${field.label}</small><strong>-</strong></span>`;
+        grid.append(card);
+      }
+      const value=card.querySelector("strong");
+      if(value.textContent!==values[field.key])value.textContent=values[field.key];
+    });
+  }
+
+  function ensureAdminMetaFields(){
+    const form=document.getElementById("companyForm");
+    const grid=form?.querySelector(".form-grid");
+    if(!grid||form.elements.adminInvestmentStatus)return;
+
+    const investment=document.createElement("label");
+    investment.dataset.adminCompanyMeta="";
+    investment.innerHTML='<span>투자 여부</span><select name="adminInvestmentStatus"><option value="-">-</option><option value="투자">투자</option><option value="미투자">미투자</option></select>';
+    const contract=document.createElement("label");
+    contract.className="form-wide";
+    contract.dataset.adminCompanyMeta="";
+    contract.innerHTML='<span>계약조건</span><input name="adminContractTerms" placeholder="예: 보통주 투자, 주요 계약 조건" />';
+    grid.append(investment,contract);
+  }
+
+  function populateAdminMetaForm(companyId){
+    ensureAdminMetaFields();
+    const form=document.getElementById("companyForm");
+    const fields=[...form.querySelectorAll("[data-admin-company-meta]")];
+    fields.forEach(field=>field.hidden=!companyId);
+    if(!companyId)return;
+    const meta=readAdminMeta()[companyId]||{};
+    form.elements.adminInvestmentStatus.value=meta.investmentStatus||"-";
+    form.elements.adminContractTerms.value=meta.contractTerms||"";
   }
 
   function syncRemainingRoundsColumn(){
@@ -92,13 +155,34 @@
   function syncAll(){
     syncRemainingRoundsColumn();
     syncCompanyDetailStatus();
+    syncAdminCompanyDetails();
   }
 
   new MutationObserver(syncAll).observe(root,{childList:true,subtree:true});
   window.addEventListener("storage",event=>{
     if(event.key===storageKey)syncCompanyDetailStatus();
+    if(event.key===adminMetaStorageKey)syncAdminCompanyDetails();
   });
+  ensureAdminMetaFields();
+  document.addEventListener("click",event=>{
+    const edit=event.target.closest("[data-edit-company]");
+    const add=event.target.closest("[data-add-company]");
+    if(edit||add)populateAdminMetaForm(edit?.dataset.editCompany||"");
+  });
+  document.getElementById("companyForm")?.addEventListener("submit",event=>{
+    const form=event.currentTarget;
+    const companyId=form.elements.id.value;
+    if(!companyId)return;
+    const values={investmentStatus:form.elements.adminInvestmentStatus.value,contractTerms:form.elements.adminContractTerms.value};
+    setTimeout(()=>{
+      if(document.getElementById("companyModal").hidden){
+        saveAdminMeta(companyId,values);
+        syncAdminCompanyDetails();
+      }
+    },0);
+  },true);
   syncRemainingRoundsColumn();
   syncCompanyDetailStatus();
+  syncAdminCompanyDetails();
 })();
 
