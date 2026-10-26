@@ -11,7 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="./styles.css?v=20261026-pocketday-company-links" />
     <link rel="stylesheet" href="./investor-list-readable.css?v=20261026" />
-    <link rel="stylesheet" href="./investor-preferences.css?v=20261026-linked" />
+    <link rel="stylesheet" href="./investor-preferences.css?v=20261026-marker-form" />
     <style>.nav-item[data-view="pipeline"],.nav-item[data-view="followups"],#sideNav .nav-label:last-of-type{display:none!important}</style>
   </head>
   <body>
@@ -146,6 +146,7 @@
             <label><span>소속 투자사</span><input name="firm" placeholder="예: 포켓벤처스" /></label>
             <label><span>직책</span><input name="title" placeholder="예: 수석 심사역" /></label>
             <label><span>운영사 종류</span><input name="operatorType" placeholder="예: 팁스, 스케일업" /></label>
+            <label><span>목록 표시</span><select name="marker"><option value="">표시 없음</option><option value="yellow">● 노란점</option><option value="red">● 빨간점</option></select></label>
             <label><span>이메일</span><input name="email" type="email" placeholder="name@company.com" /></label>
             <label><span>연락처</span><input name="phone" type="tel" placeholder="010-0000-0000" /></label>
             <label class="form-wide"><span>관심 라운드</span><input name="rounds" placeholder="예: Seed, Pre-A, Series A (쉼표로 구분)" /></label>
@@ -232,7 +233,7 @@
     <script src="./pocketday-archive.js"></script>
   <script src="./app.js?v=20261026-pocketday-company-links"></script>
   <script src="./pocketday-company-links.js?v=20261026"></script>
-  <script src="./investor-preferences.js?v=20261026-linked"></script>
+  <script src="./investor-preferences.js?v=20261026-marker-form"></script>
   </body>
 </html>
 
