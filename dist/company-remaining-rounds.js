@@ -48,7 +48,8 @@
     const saved=readStatuses()[companyId];
     const status=statuses.includes(saved)?saved:"-";
     statusCard.dataset.state=status;
-    statusCard.querySelector("strong").textContent=status;
+    const statusValue=statusCard.querySelector("strong");
+    if(statusValue.textContent!==status)statusValue.textContent=status;
   }
 
   function syncRemainingRoundsColumn(){
