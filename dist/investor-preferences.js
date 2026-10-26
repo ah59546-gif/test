@@ -1,11 +1,16 @@
 (()=>{
   const toList=value=>Array.isArray(value)?value.filter(Boolean):String(value||"").split(",").map(item=>item.trim()).filter(Boolean);
   const tags=values=>toList(values).map(value=>`<span class="tag">${esc(value)}</span>`).join("");
+  const homeInvestorKey="pocket-crm-linked-investor-v1";
+  const markerDot=person=>person?.marker?`<span class="investor-status-dot ${person.marker}" aria-label="${person.marker==="red"?"빨간점":"노란점"} 표시"></span>`:"";
+  const markerPicker=person=>`<span class="investor-marker-picker" aria-label="${esc(person.name)} 표시 색상"><button type="button" class="marker-choice yellow ${person.marker==="yellow"?"active":""}" data-investor-marker="yellow" data-investor-id="${person.id}" title="노란점 표시" aria-label="노란점 표시"></button><button type="button" class="marker-choice red ${person.marker==="red"?"active":""}" data-investor-marker="red" data-investor-id="${person.id}" title="빨간점 표시" aria-label="빨간점 표시"></button></span>`;
 
   db.investors.forEach(person=>{
     person.rounds=toList(person.rounds);
     person.focus=toList(person.focus);
+    person.marker=["yellow","red"].includes(person.marker)?person.marker:"";
   });
+  let linkedInvestorId=localStorage.getItem(homeInvestorKey)||db.investors[0]?.id||"";
 
   renderInvestors=function(){
     const people=db.investors.filter(person=>{
@@ -15,7 +20,7 @@
     const rows=people.map(person=>{
       const aggregate=investorAgg(person);
       const operatorType=person.operatorType||operatorTypeForFirm(person.firm);
-      return `<tr><td><div class="entity-cell"><i class="entity-mark">${initials(person.name)}</i><div><button class="entity-link" data-investor="${person.id}">${esc(person.name)}</button>${person.email?`<small>${esc(person.email)}</small>`:""}${person.phone?`<small>연락처 ${esc(person.phone)}</small>`:""}</div></div></td><td><div class="firm-with-type">${person.firm?`<span>${esc(person.firm)}</span>`:""}${operatorTypeBadges(operatorType)}</div></td><td>${esc(person.title)}</td><td><div class="investor-preference-tags">${tags(person.rounds)}</div></td><td><div class="investor-preference-tags">${tags(person.focus)}</div></td><td>${aggregate.followups}</td><td>${aggregate.done}</td></tr>`;
+      return `<tr><td><div class="entity-cell"><i class="entity-mark">${initials(person.name)}</i><div><div class="investor-name-line"><button class="entity-link" data-investor="${person.id}">${esc(person.name)}</button>${markerDot(person)}${markerPicker(person)}</div>${person.email?`<small>${esc(person.email)}</small>`:""}${person.phone?`<small>연락처 ${esc(person.phone)}</small>`:""}</div></div></td><td><div class="firm-with-type">${person.firm?`<span>${esc(person.firm)}</span>`:""}${operatorTypeBadges(operatorType)}</div></td><td>${esc(person.title)}</td><td><div class="investor-preference-tags">${tags(person.rounds)}</div></td><td><div class="investor-preference-tags">${tags(person.focus)}</div></td><td>${aggregate.followups}</td><td>${aggregate.done}</td></tr>`;
     }).join("");
     return `<div class="list-header"><p>직접 등록한 심사역의 기본 정보와 연결된 이력을 관리합니다.</p><button class="primary-button" data-open-investor>＋ 심사역 추가</button></div><section class="panel db-table investor-list-table"><div class="table-wrap"><table><thead><tr><th>심사역</th><th>소속 투자사 · 운영사 종류</th><th>직책</th><th>관심 라운드</th><th>관심 분야</th><th>후속 미팅</th><th>투자 완료</th></tr></thead><tbody>${rows||`<tr><td colspan="7"><div class="empty investor-empty"><strong>등록된 심사역이 없습니다.</strong><span>심사역 추가 버튼을 눌러 직접 등록해 주세요.</span><button class="primary-button" data-open-investor>＋ 첫 심사역 추가</button></div></td></tr>`}</tbody></table></div></section>`;
   };
@@ -59,12 +64,51 @@
     }
   };
 
+  function eventHasInvestor(event,person){
+    return (event.investors||[]).some(value=>pocketdayInvestorDetails(value).name.trim()===person.name.trim());
+  }
+
+  renderInvestorHome=function(){
+    const person=db.investors.find(item=>item.id===linkedInvestorId)||db.investors[0];
+    if(!person)return `<div class="role-dashboard investor-dashboard"><section class="linked-investor-empty"><h1>등록된 심사역이 없습니다.</h1><p>관리자 페이지의 심사역 목록에서 먼저 심사역을 추가해 주세요.</p></section></div>`;
+    linkedInvestorId=person.id;
+    const eventHistory=pocketdaySchedule.filter(event=>eventHasInvestor(event,person)).map(event=>({...event,status:event.status==="완료"?"참여 완료":"참여 예정"}));
+    const companyHistory=eventHistory.flatMap(event=>event.companies.map(company=>({company,event:`${pocketdayLabel(event)} 포켓데이`,date:event.date,status:event.status})));
+    const eventRows=eventHistory.map(event=>`<article class="pocket-history-row" data-pocket-row data-search="${esc(`${event.id} ${event.round||""} ${event.companies.join(" ")}`)}"><div class="pocket-event-info"><time>${esc(event.date)}</time><div><h2>${esc(pocketdayLabel(event))} 포켓데이</h2><span class="pocket-status ${event.status==="참여 완료"?"done":""}">${event.status}</span></div><p>운영구분 · ${esc(pocketdayOperationType(event))}</p></div><div class="pocket-company-list"><strong>참여 기업</strong><div>${event.companies.map(name=>`<span>${esc(name)}</span>`).join("")}</div></div><button class="pocket-row-open" data-pocket-open aria-label="${esc(pocketdayLabel(event))} 포켓데이 심사 관리 열기">›</button></article>`).join("");
+    const companyRows=companyHistory.map(item=>`<article class="pocket-history-row company-view-row" data-pocket-row data-search="${esc(`${item.company} ${item.event}`)}"><div class="pocket-event-info"><time>${item.date}</time><div><h2>${esc(item.company)}</h2><span class="pocket-status ${item.status==="참여 완료"?"done":""}">${item.status}</span></div><p>검토 기업 · 포켓데이 참여 이력</p></div><div class="pocket-company-list"><strong>참여 행사</strong><div><span>${item.event}</span></div></div><button class="pocket-row-open" data-pocket-open aria-label="${esc(item.company)} 심사 관리 열기">›</button></article>`).join("");
+    const options=db.investors.map(item=>`<option value="${item.id}" ${item.id===person.id?"selected":""}>${esc(item.name)}${item.firm?` · ${esc(item.firm)}`:""}</option>`).join("");
+    const empty=`<div class="linked-investor-no-history">선택한 심사역의 포켓데이 참여 이력이 없습니다.</div>`;
+    return `<div class="role-dashboard investor-dashboard pocket-history-page"><section class="linked-investor-bar"><label><span>심사역 선택</span><select data-linked-investor>${options}</select></label><div class="linked-investor-profile"><i>${initials(person.name)}</i><div><h1>${markerDot(person)}${esc(person.name)} 심사역</h1><p>${esc(person.firm||"소속 미등록")}${person.title?` · ${esc(person.title)}`:""}</p><div class="linked-investor-tags">${tags(person.rounds)}${tags(person.focus)}</div></div></div></section><nav class="pocket-breadcrumb"><span>포켓데이</span><b>›</b><strong>참여 이력</strong></nav><header class="pocket-history-title"><h1>${esc(person.name)} 심사역 참여 이력</h1><p>관리자 심사역 목록과 연결된 포켓데이·기업별 심사 이력입니다.</p></header><div class="pocket-view-tabs"><button class="${pocketViewMode==="event"?"active":""}" data-pocket-tab="event">포켓데이별 보기</button><button class="${pocketViewMode==="company"?"active":""}" data-pocket-tab="company">기업별 보기</button></div><section class="pocket-history-panel"><div class="pocket-history-tools"><label><span>⌕</span><input type="search" data-pocket-search placeholder="회차 또는 기업명으로 검색해보세요." aria-label="포켓데이 이력 검색"></label></div><div class="pocket-history-list ${pocketViewMode==="company"?"company-mode":""}">${pocketViewMode==="event"?(eventRows||empty):(companyRows||empty)}</div><div class="pocket-search-empty" hidden>검색 결과가 없습니다.</div></section></div>`;
+  };
+
+  document.addEventListener("click",event=>{
+    const button=event.target.closest("[data-investor-marker]");
+    if(!button)return;
+    event.preventDefault();
+    event.stopPropagation();
+    const person=inv(button.dataset.investorId);
+    if(!person)return;
+    person.marker=person.marker===button.dataset.investorMarker?"":button.dataset.investorMarker;
+    save();
+    render();
+  });
+
+  document.addEventListener("change",event=>{
+    const select=event.target.closest("[data-linked-investor]");
+    if(!select)return;
+    linkedInvestorId=select.value;
+    localStorage.setItem(homeInvestorKey,linkedInvestorId);
+    render();
+  });
+
   const root=document.getElementById("viewRoot");
   function enhanceInvestorDetail(){
     const grid=root.querySelector(".investor-detail-page .investor-info-grid.full-page");
     if(!grid||grid.querySelector("[data-investor-rounds]"))return;
     const person=selectedInvestorId?inv(selectedInvestorId):null;
     if(!person)return;
+    const title=root.querySelector(".investor-detail-identity h1");
+    if(title&&!title.querySelector(".investor-status-dot"))title.insertAdjacentHTML("afterbegin",markerDot(person));
     const focusCard=[...grid.children].find(card=>card.querySelector("small")?.textContent.trim()==="관심 분야");
     if(!focusCard)return;
     const card=document.createElement("div");
