@@ -1,0 +1,12 @@
+.investor-list-table table{min-width:1180px}
+.investor-list-table th:nth-child(1){width:20%}
+.investor-list-table th:nth-child(2){width:24%}
+.investor-list-table th:nth-child(3){width:10%}
+.investor-list-table th:nth-child(4),
+.investor-list-table th:nth-child(5){width:16%}
+.investor-list-table th:nth-child(6),
+.investor-list-table th:nth-child(7){width:7%}
+.investor-preference-tags{display:flex!important;align-items:center;flex-wrap:wrap;gap:5px}
+.investor-preference-tags:empty::after{content:"—";color:#9aa4b7;font-weight:500}
+.investor-preference-tags .tag{font-size:10px}
+
