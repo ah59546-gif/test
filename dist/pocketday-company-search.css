@@ -1,0 +1,10 @@
+.pocketday-company-search{display:flex;align-items:center;gap:7px;min-width:220px;padding:9px 12px;border:1px solid #d8e0ee;border-radius:10px;background:#fff;transition:border-color .16s ease,box-shadow .16s ease}
+.pocketday-company-search:focus-within{border-color:#315df6;box-shadow:0 0 0 3px rgba(49,93,246,.11)}
+.pocketday-company-search>span{color:#315df6;font-size:15px}
+.pocketday-company-search input{width:100%;border:0;outline:0;color:#182744;background:transparent;font:inherit;font-size:11px}
+.pocketday-company-search input::placeholder{color:#8994a8}
+.pocketday-company-search-empty{padding:42px 20px;text-align:center;color:#7c879b}
+.pocketday-company-search-empty strong{display:block;color:#263653;font-size:14px}
+.pocketday-company-search-empty p{margin:6px 0 0;font-size:11px}
+@media(max-width:760px){.pocketday-company-search{width:100%;min-width:0}}
+
