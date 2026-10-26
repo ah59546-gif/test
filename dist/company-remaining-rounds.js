@@ -15,6 +15,42 @@
     localStorage.setItem(storageKey,JSON.stringify(saved));
   }
 
+  function currentCompanyId(){
+    const editButton=root.querySelector("[data-edit-company]");
+    if(editButton?.dataset.editCompany)return editButton.dataset.editCompany;
+    const parts=location.hash.replace(/^#\/?/,"").split("/");
+    return parts[1]==="companyDetail"?decodeURIComponent(parts[2]||""):"";
+  }
+
+  function syncCompanyDetailStatus(){
+    const brand=root.querySelector(".company-detail-page .meeting-company-brand");
+    if(!brand)return;
+    const companyId=currentCompanyId();
+    const logo=brand.querySelector(".meeting-company-logo");
+    if(!companyId||!logo)return;
+
+    let stack=brand.querySelector(".company-detail-logo-stack");
+    if(!stack){
+      stack=document.createElement("div");
+      stack.className="company-detail-logo-stack";
+      logo.before(stack);
+      stack.append(logo);
+    }
+
+    let statusCard=stack.querySelector(".company-detail-remaining-status");
+    if(!statusCard){
+      statusCard=document.createElement("div");
+      statusCard.className="company-detail-remaining-status";
+      statusCard.innerHTML="<small>잔여회차</small><strong>-</strong>";
+      stack.append(statusCard);
+    }
+
+    const saved=readStatuses()[companyId];
+    const status=statuses.includes(saved)?saved:"-";
+    statusCard.dataset.state=status;
+    statusCard.querySelector("strong").textContent=status;
+  }
+
   function syncRemainingRoundsColumn(){
     const table=[...root.querySelectorAll(".db-table table")].find(candidate=>{
       const labels=[...candidate.querySelectorAll("thead th")].map(cell=>cell.textContent.trim());
@@ -52,7 +88,16 @@
     });
   }
 
-  new MutationObserver(syncRemainingRoundsColumn).observe(root,{childList:true,subtree:true});
+  function syncAll(){
+    syncRemainingRoundsColumn();
+    syncCompanyDetailStatus();
+  }
+
+  new MutationObserver(syncAll).observe(root,{childList:true,subtree:true});
+  window.addEventListener("storage",event=>{
+    if(event.key===storageKey)syncCompanyDetailStatus();
+  });
   syncRemainingRoundsColumn();
+  syncCompanyDetailStatus();
 })();
 

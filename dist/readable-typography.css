@@ -28,6 +28,13 @@
 .company-remaining-select[data-state="대기"]{color:#9a6b00;border-color:#f0d58f;background:#fff7df}
 .company-remaining-select[data-state="완료"]{color:#087b5d;border-color:#aee1cf;background:#e8f7f1}
 .company-remaining-select[data-state="진행중"]{color:#3159d9;border-color:#bccafa;background:#eef2ff}
+.company-detail-logo-stack{display:grid;flex:none;justify-items:center;gap:9px}
+.company-detail-remaining-status{width:104px;display:grid;justify-items:center;gap:3px;padding:8px 10px;border:1px solid #dfe5ef;border-radius:11px;color:#56637b;background:#f8f9fc;font-weight:800}
+.company-detail-remaining-status small{color:#8994a8;font-size:9px!important;font-weight:700}
+.company-detail-remaining-status strong{font-size:12px}
+.company-detail-remaining-status[data-state="대기"]{color:#9a6b00;border-color:#f0d58f;background:#fff7df}
+.company-detail-remaining-status[data-state="완료"]{color:#087b5d;border-color:#aee1cf;background:#e8f7f1}
+.company-detail-remaining-status[data-state="진행중"]{color:#3159d9;border-color:#bccafa;background:#eef2ff}
 .investor-detail-stats:has([data-participation-stat]){grid-template-columns:repeat(4,minmax(0,1fr))}
 
 .modal-backdrop :where(p,label,time,summary,li,button,input,select,textarea){font-size:12px!important}
@@ -43,5 +50,7 @@
   .content :where(p,label,time,summary,li,button,input,select,textarea,td){font-size:13px!important}
   .content :where(span,em,th){font-size:12px!important}
   .investor-detail-stats:has([data-participation-stat]){grid-template-columns:1fr}
+  .company-detail-logo-stack{justify-items:start}
+  .company-detail-remaining-status{width:76px}
 }
 
