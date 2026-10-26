@@ -17,6 +17,14 @@
 .content .search-box>span{font-size:18px!important}
 .content .pocketday-filter-result>span{font-size:15px!important}
 
+.content:has(.db-table thead th:nth-child(6):last-child) .page-heading p,
+.list-header:has(+ .db-table thead th:nth-child(6):last-child) p{font-size:13px!important}
+.db-table:has(thead th:nth-child(6):last-child) th{padding:14px 16px;font-size:13px!important}
+.db-table:has(thead th:nth-child(6):last-child) td{padding:17px 16px;font-size:14px!important}
+.db-table:has(thead th:nth-child(6):last-child) .entity-link{font-size:14px!important}
+.db-table:has(thead th:nth-child(6):last-child) .entity-mark{width:38px;height:38px;font-size:12px!important}
+.db-table:has(thead th:nth-child(6):last-child) :where(.entity-cell small,.tag){font-size:12px!important}
+
 .modal-backdrop :where(p,label,time,summary,li,button,input,select,textarea){font-size:12px!important}
 .modal-backdrop :where(label>span,small){font-size:11px!important}
 .drawer :where(p,label,time,summary,li,button,input,select,textarea){font-size:12px!important}
