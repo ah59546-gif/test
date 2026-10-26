@@ -22,7 +22,8 @@
       const companyId=row.querySelector("[data-company]")?.dataset.company;
       const cell=row.cells[investorIndex];
       if(!companyId||!cell)return;
-      cell.textContent=String(participationCount(com(companyId)));
+      const count=String(participationCount(com(companyId)));
+      if(cell.textContent.trim()!==count)cell.textContent=count;
       cell.dataset.pocketdayInvestorTotal="";
       cell.title="기업 상세페이지의 회차별 참여 심사역 합계";
     });
