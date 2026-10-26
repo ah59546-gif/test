@@ -17,11 +17,13 @@
 .content .search-box>span{font-size:18px!important}
 .content .pocketday-filter-result>span{font-size:15px!important}
 
-.db-table:has(thead th:nth-child(6):last-child) th{padding:13px 16px;font-size:11px!important}
-.db-table:has(thead th:nth-child(6):last-child) td{padding:15px 16px;font-size:12px!important}
-.db-table:has(thead th:nth-child(6):last-child) .entity-link{font-size:12px!important}
-.db-table:has(thead th:nth-child(6):last-child) .entity-mark{width:36px;height:36px;font-size:11px!important}
-.db-table:has(thead th:nth-child(6):last-child) :where(.entity-cell small,.tag){font-size:10px!important}
+.db-table:has(th[data-remaining-rounds]) th{padding:13px 16px;font-size:11px!important}
+.db-table:has(th[data-remaining-rounds]) td{padding:15px 16px;font-size:12px!important}
+.db-table:has(th[data-remaining-rounds]) .entity-link{font-size:12px!important}
+.db-table:has(th[data-remaining-rounds]) .entity-mark{width:36px;height:36px;font-size:11px!important}
+.db-table:has(th[data-remaining-rounds]) :where(.entity-cell small,.tag){font-size:10px!important}
+.db-table th[data-remaining-rounds],.company-remaining-rounds{text-align:center}
+.company-remaining-rounds{color:#8b96aa;font-weight:700}
 .investor-detail-stats:has([data-participation-stat]){grid-template-columns:repeat(4,minmax(0,1fr))}
 
 .modal-backdrop :where(p,label,time,summary,li,button,input,select,textarea){font-size:12px!important}
