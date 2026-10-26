@@ -35,7 +35,7 @@
 .company-detail-remaining-status[data-state="대기"]{color:#9a6b00;border-color:#f0d58f;background:#fff7df}
 .company-detail-remaining-status[data-state="완료"]{color:#087b5d;border-color:#aee1cf;background:#e8f7f1}
 .company-detail-remaining-status[data-state="진행중"]{color:#3159d9;border-color:#bccafa;background:#eef2ff}
-.company-admin-contract strong{white-space:normal;line-height:1.45;overflow-wrap:anywhere}
+.company-admin-contract-amount strong,.company-admin-success-fee strong{white-space:normal;line-height:1.45;overflow-wrap:anywhere}
 .company-admin-investment strong{font-weight:800}
 .investor-detail-stats:has([data-participation-stat]){grid-template-columns:repeat(4,minmax(0,1fr))}
 

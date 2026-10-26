@@ -22,7 +22,13 @@
 
   function saveAdminMeta(companyId,values){
     const saved=readAdminMeta();
-    saved[companyId]={investmentStatus:values.investmentStatus||"-",contractTerms:String(values.contractTerms||"").trim()};
+    saved[companyId]={
+      ...saved[companyId],
+      investmentStatus:values.investmentStatus||"-",
+      paymentStatus:values.paymentStatus||"-",
+      contractAmount:String(values.contractAmount||"").trim(),
+      successFee:String(values.successFee||"").trim()
+    };
     localStorage.setItem(adminMetaStorageKey,JSON.stringify(saved));
   }
 
@@ -69,10 +75,17 @@
     if(!grid||!editButton)return;
     const companyId=editButton.dataset.editCompany;
     const meta=readAdminMeta()[companyId]||{};
-    const values={investmentStatus:meta.investmentStatus||"-",contractTerms:meta.contractTerms||"-"};
+    const values={
+      investmentStatus:meta.investmentStatus||"-",
+      paymentStatus:meta.paymentStatus||"-",
+      contractAmount:meta.contractAmount||meta.contractTerms||"-",
+      successFee:meta.successFee||"-"
+    };
     const fields=[
       {key:"investmentStatus",icon:"✓",label:"투자 여부",className:"company-admin-investment"},
-      {key:"contractTerms",icon:"▧",label:"계약조건",className:"company-admin-contract"}
+      {key:"paymentStatus",icon:"◉",label:"결제 여부",className:"company-admin-payment"},
+      {key:"contractAmount",icon:"₩",label:"계약금액",className:"company-admin-contract-amount"},
+      {key:"successFee",icon:"%",label:"성공보수",className:"company-admin-success-fee"}
     ];
 
     fields.forEach(field=>{
@@ -97,11 +110,16 @@
     const investment=document.createElement("label");
     investment.dataset.adminCompanyMeta="";
     investment.innerHTML='<span>투자 여부</span><select name="adminInvestmentStatus"><option value="-">-</option><option value="투자">투자</option><option value="미투자">미투자</option></select>';
-    const contract=document.createElement("label");
-    contract.className="form-wide";
-    contract.dataset.adminCompanyMeta="";
-    contract.innerHTML='<span>계약조건</span><input name="adminContractTerms" placeholder="예: 보통주 투자, 주요 계약 조건" />';
-    grid.append(investment,contract);
+    const payment=document.createElement("label");
+    payment.dataset.adminCompanyMeta="";
+    payment.innerHTML='<span>결제 여부</span><select name="adminPaymentStatus"><option value="-">-</option><option value="미결제">미결제</option><option value="결제완료">결제완료</option></select>';
+    const contractAmount=document.createElement("label");
+    contractAmount.dataset.adminCompanyMeta="";
+    contractAmount.innerHTML='<span>계약금액</span><input name="adminContractAmount" placeholder="예: 30,000,000원" />';
+    const successFee=document.createElement("label");
+    successFee.dataset.adminCompanyMeta="";
+    successFee.innerHTML='<span>성공보수</span><input name="adminSuccessFee" placeholder="예: 5% 또는 10,000,000원" />';
+    grid.append(investment,payment,contractAmount,successFee);
   }
 
   function populateAdminMetaForm(companyId){
@@ -112,7 +130,9 @@
     if(!companyId)return;
     const meta=readAdminMeta()[companyId]||{};
     form.elements.adminInvestmentStatus.value=meta.investmentStatus||"-";
-    form.elements.adminContractTerms.value=meta.contractTerms||"";
+    form.elements.adminPaymentStatus.value=meta.paymentStatus||"-";
+    form.elements.adminContractAmount.value=meta.contractAmount||meta.contractTerms||"";
+    form.elements.adminSuccessFee.value=meta.successFee||"";
   }
 
   function syncRemainingRoundsColumn(){
@@ -173,7 +193,12 @@
     const form=event.currentTarget;
     const companyId=form.elements.id.value;
     if(!companyId)return;
-    const values={investmentStatus:form.elements.adminInvestmentStatus.value,contractTerms:form.elements.adminContractTerms.value};
+    const values={
+      investmentStatus:form.elements.adminInvestmentStatus.value,
+      paymentStatus:form.elements.adminPaymentStatus.value,
+      contractAmount:form.elements.adminContractAmount.value,
+      successFee:form.elements.adminSuccessFee.value
+    };
     setTimeout(()=>{
       if(document.getElementById("companyModal").hidden){
         saveAdminMeta(companyId,values);
