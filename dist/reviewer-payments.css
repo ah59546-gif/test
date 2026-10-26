@@ -1,0 +1,19 @@
+.reviewer-payment-page{display:grid;gap:16px}
+.reviewer-payment-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.reviewer-payment-summary article{padding:20px 22px;border:1px solid #dfe6f1;border-radius:16px;background:#fff}
+.reviewer-payment-summary span,.reviewer-payment-summary strong{display:block}
+.reviewer-payment-summary span{color:#748198;font-size:11px;font-weight:700}
+.reviewer-payment-summary strong{margin-top:8px;color:#162541;font:700 26px "DM Sans",sans-serif}
+.reviewer-payment-summary small{margin-left:3px;font-size:11px}
+.reviewer-payment-summary .unpaid{background:#fff9eb}.reviewer-payment-summary .unpaid strong{color:#b57700}
+.reviewer-payment-summary .paid{background:#ecfaf5}.reviewer-payment-summary .paid strong{color:#12825e}
+.reviewer-payment-panel{padding:0;overflow:hidden}
+.reviewer-payment-panel>header{display:flex;align-items:end;justify-content:space-between;padding:22px 24px;border-bottom:1px solid #e2e7f0}
+.reviewer-payment-panel>header span{color:#315df6;font-size:9px;font-weight:900;letter-spacing:1.3px}
+.reviewer-payment-panel>header h2{margin:5px 0 0;color:#172641;font-size:19px}
+.reviewer-payment-panel>header p{margin:0;color:#7e899d;font-size:10px}
+.reviewer-payment-panel th,.reviewer-payment-panel td{font-size:11px}
+.reviewer-payment-type{display:inline-flex;padding:5px 8px;border-radius:999px;color:#52617b;background:#eef2f8;font-size:10px}
+@media(max-width:900px){.reviewer-payment-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.reviewer-payment-panel>header{align-items:flex-start;flex-direction:column;gap:7px}}
+@media(max-width:560px){.reviewer-payment-summary{grid-template-columns:1fr 1fr}.reviewer-payment-summary article{padding:16px}.reviewer-payment-panel>header{padding:18px 16px}}
+
