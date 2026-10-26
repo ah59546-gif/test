@@ -24,6 +24,10 @@
 .db-table:has(th[data-remaining-rounds]) :where(.entity-cell small,.tag){font-size:10px!important}
 .db-table th[data-remaining-rounds],.company-remaining-rounds{text-align:center}
 .company-remaining-rounds{color:#8b96aa;font-weight:700}
+.company-remaining-select{min-width:88px;height:34px;padding:0 28px 0 10px;border:1px solid #d7dfec;border-radius:9px;color:#56637b;background:#fff;font-size:11px;font-weight:800;cursor:pointer}
+.company-remaining-select[data-state="대기"]{color:#9a6b00;border-color:#f0d58f;background:#fff7df}
+.company-remaining-select[data-state="완료"]{color:#087b5d;border-color:#aee1cf;background:#e8f7f1}
+.company-remaining-select[data-state="진행중"]{color:#3159d9;border-color:#bccafa;background:#eef2ff}
 .investor-detail-stats:has([data-participation-stat]){grid-template-columns:repeat(4,minmax(0,1fr))}
 
 .modal-backdrop :where(p,label,time,summary,li,button,input,select,textarea){font-size:12px!important}
