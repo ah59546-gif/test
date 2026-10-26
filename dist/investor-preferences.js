@@ -75,5 +75,6 @@
   }
   new MutationObserver(enhanceInvestorDetail).observe(root,{childList:true,subtree:true});
   enhanceInvestorDetail();
+  render();
 })();
 
