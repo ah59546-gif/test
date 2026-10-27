@@ -17,6 +17,13 @@
 .content .search-box>span{font-size:18px!important}
 .content .pocketday-filter-result>span{font-size:15px!important}
 
+.company-list-tabs{width:min(360px,100%);display:grid;grid-template-columns:1fr 1fr;margin-bottom:14px;padding:4px;border-radius:11px;background:#e9eef7}
+.company-list-tabs button{display:flex;align-items:center;justify-content:center;gap:7px;padding:10px 14px!important;border:0;border-radius:8px;color:#66738b;background:transparent;font-weight:800;cursor:pointer}
+.company-list-tabs button b{min-width:23px;padding:2px 6px;border-radius:999px;color:#71809a;background:#dce3ee;font-size:10px}
+.company-list-tabs button.active{color:#fff;background:#3159f5;box-shadow:0 6px 14px rgba(49,89,245,.2)}
+.company-list-tabs button.active b{color:#3159f5;background:#fff}
+.company-list-tabs button:focus-visible{outline:2px solid #3159f5;outline-offset:2px}
+
 .db-table:has(th[data-remaining-rounds]) th{padding:13px 16px;font-size:11px!important}
 .db-table:has(th[data-remaining-rounds]) td{padding:15px 16px;font-size:12px!important}
 .db-table:has(th[data-remaining-rounds]) .entity-link{font-size:12px!important}
@@ -63,5 +70,6 @@
   .company-detail-meta-row{grid-template-columns:76px 76px}
   .company-detail-remaining-status{width:76px}
   .company-detail-type-select{width:76px}
+  .company-list-tabs{width:100%}
 }
 

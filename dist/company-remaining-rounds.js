@@ -205,7 +205,10 @@
       select.dataset.state=select.value;
       select.addEventListener("change",()=>{
         select.dataset.state=select.value;
-        if(companyId)saveStatus(companyId,select.value);
+        if(companyId){
+          saveStatus(companyId,select.value);
+          render();
+        }
       });
       cell.append(select);
       row.append(cell);
