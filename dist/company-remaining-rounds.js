@@ -3,6 +3,7 @@
   const storageKey="pocket-crm-company-remaining-rounds-v1";
   const companyTypeStorageKey="pocket-crm-company-types-v1";
   const adminMetaStorageKey="pocket-crm-admin-company-terms-v1";
+  const companyNoteStorageKey="pocket-crm-company-notes-v1";
   const statuses=["-","대기","완료","진행중"];
   const companyTypes=["포켓","외부"];
   if(!root)return;
@@ -43,6 +44,32 @@
       successFee:String(values.successFee||"").trim()
     };
     localStorage.setItem(adminMetaStorageKey,JSON.stringify(saved));
+  }
+
+  function readCompanyNotes(){
+    try{return JSON.parse(localStorage.getItem(companyNoteStorageKey)||"{}")}catch{return {}}
+  }
+
+  function saveCompanyNote(companyId,text){
+    if(!companyId)return null;
+    const saved=readCompanyNotes();
+    const value=String(text||"").trim();
+    if(!value){
+      delete saved[companyId];
+      localStorage.setItem(companyNoteStorageKey,JSON.stringify(saved));
+      return null;
+    }
+    const record={text:value,updatedAt:new Date().toISOString()};
+    saved[companyId]=record;
+    localStorage.setItem(companyNoteStorageKey,JSON.stringify(saved));
+    return record;
+  }
+
+  function formatNoteTime(value){
+    if(!value)return "아직 저장된 메모가 없습니다.";
+    const date=new Date(value);
+    if(Number.isNaN(date.getTime()))return "저장된 메모";
+    return `${new Intl.DateTimeFormat("ko-KR",{year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}).format(date)} 저장`;
   }
 
   function currentCompanyId(){
@@ -142,6 +169,44 @@
     });
   }
 
+  function syncCompanyNote(){
+    const page=root.querySelector(".company-detail-page");
+    const editButton=page?.querySelector("[data-edit-company]");
+    const workspace=page?.querySelector(".company-detail-workspace");
+    if(!page||!editButton||!workspace)return;
+    const companyId=editButton.dataset.editCompany;
+    let panel=page.querySelector("[data-company-note-panel]");
+    if(!panel){
+      panel=document.createElement("section");
+      panel.className="company-note-panel";
+      panel.dataset.companyNotePanel="";
+      panel.innerHTML=`<header><div><span class="company-note-icon">✎</span><div><h2>특이사항 메모</h2><p>대표자 요청사항, 다음 연락 일정, 계약 검토 내용을 자유롭게 기록하세요.</p></div></div><b>관리자 전용</b></header><label><span class="sr-only">특이사항 메모</span><textarea maxlength="2000" data-company-note-input placeholder="예: 다음 미팅 전 매출 자료 확인 필요&#10;계약서 수정본 전달 후 대표자 회신 대기"></textarea></label><footer><span data-company-note-status>아직 저장된 메모가 없습니다.</span><div><small data-company-note-count>0 / 2000</small><button type="button" data-save-company-note>메모 저장</button></div></footer>`;
+      workspace.prepend(panel);
+      const textarea=panel.querySelector("[data-company-note-input]");
+      const updateCount=()=>{const count=`${textarea.value.length} / 2000`;const node=panel.querySelector("[data-company-note-count]");if(node.textContent!==count)node.textContent=count};
+      const submitNote=()=>{
+        const record=saveCompanyNote(currentCompanyId(),textarea.value);
+        const status=panel.querySelector("[data-company-note-status]");
+        const label=formatNoteTime(record?.updatedAt);
+        if(status.textContent!==label)status.textContent=label;
+        updateCount();
+        if(typeof showToast==="function")showToast(record?"특이사항 메모를 저장했습니다.":"특이사항 메모를 비웠습니다.");
+      };
+      textarea.addEventListener("input",updateCount);
+      textarea.addEventListener("keydown",event=>{if((event.ctrlKey||event.metaKey)&&event.key==="Enter"){event.preventDefault();submitNote()}});
+      panel.querySelector("[data-save-company-note]").addEventListener("click",submitNote);
+    }
+    const note=readCompanyNotes()[companyId]||{};
+    const textarea=panel.querySelector("[data-company-note-input]");
+    if(document.activeElement!==textarea&&textarea.value!==(note.text||""))textarea.value=note.text||"";
+    const count=`${textarea.value.length} / 2000`;
+    const countNode=panel.querySelector("[data-company-note-count]");
+    if(countNode.textContent!==count)countNode.textContent=count;
+    const statusLabel=formatNoteTime(note.updatedAt);
+    const status=panel.querySelector("[data-company-note-status]");
+    if(status.textContent!==statusLabel)status.textContent=statusLabel;
+  }
+
   function ensureAdminMetaFields(){
     const form=document.getElementById("companyForm");
     const grid=form?.querySelector(".form-grid");
@@ -219,6 +284,7 @@
     syncRemainingRoundsColumn();
     syncCompanyDetailStatus();
     syncAdminCompanyDetails();
+    syncCompanyNote();
   }
 
   new MutationObserver(syncAll).observe(root,{childList:true,subtree:true});
@@ -226,6 +292,7 @@
     if(event.key===storageKey)syncCompanyDetailStatus();
     if(event.key===companyTypeStorageKey)syncCompanyDetailStatus();
     if(event.key===adminMetaStorageKey)syncAdminCompanyDetails();
+    if(event.key===companyNoteStorageKey)syncCompanyNote();
   });
   ensureAdminMetaFields();
   document.addEventListener("click",event=>{
@@ -253,5 +320,6 @@
   syncRemainingRoundsColumn();
   syncCompanyDetailStatus();
   syncAdminCompanyDetails();
+  syncCompanyNote();
 })();
 
