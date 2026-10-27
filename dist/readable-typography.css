@@ -17,7 +17,7 @@
 .content .search-box>span{font-size:18px!important}
 .content .pocketday-filter-result>span{font-size:15px!important}
 
-.company-list-tabs{width:min(360px,100%);display:grid;grid-template-columns:1fr 1fr;margin-bottom:14px;padding:4px;border-radius:11px;background:#e9eef7}
+.company-list-tabs{width:min(540px,100%);display:grid;grid-template-columns:repeat(3,1fr);margin-bottom:14px;padding:4px;border-radius:11px;background:#e9eef7}
 .company-list-tabs button{display:flex;align-items:center;justify-content:center;gap:7px;padding:10px 14px!important;border:0;border-radius:8px;color:#66738b;background:transparent;font-weight:800;cursor:pointer}
 .company-list-tabs button b{min-width:23px;padding:2px 6px;border-radius:999px;color:#71809a;background:#dce3ee;font-size:10px}
 .company-list-tabs button.active{color:#fff;background:#3159f5;box-shadow:0 6px 14px rgba(49,89,245,.2)}
