@@ -20,8 +20,19 @@
     const paid=records.filter(item=>item.paymentStatus==="지급").length;
     const unpaid=records.length-paid;
     const investorCount=new Set(records.map(item=>item.investorId)).size;
-    const rows=records.map(item=>`<tr><td>${fmtDate(item.date)}</td><td><button class="entity-link" data-investor="${item.investorId}">${esc(item.investor.name)}</button></td><td>${esc(item.investor.firm||"—")}</td><td><button class="entity-link" data-company="${item.companyId}">${esc(item.company.name)}</button></td><td><span class="reviewer-payment-type">${esc(item.type||"포켓데이")}</span></td><td><select class="status-select payment-select" data-payment-id="${item.id}" aria-label="${esc(item.investor.name)} 심사비 지급 상태"><option ${item.paymentStatus!=="지급"?"selected":""}>미지급</option><option ${item.paymentStatus==="지급"?"selected":""}>지급</option></select></td></tr>`).join("");
-    return `<div class="reviewer-payment-page"><section class="reviewer-payment-summary"><article><span>전체 심사 건수</span><strong>${records.length}<small>건</small></strong></article><article class="unpaid"><span>미지급</span><strong>${unpaid}<small>건</small></strong></article><article class="paid"><span>지급 완료</span><strong>${paid}<small>건</small></strong></article><article><span>참여 심사역</span><strong>${investorCount}<small>명</small></strong></article></section><section class="panel reviewer-payment-panel"><header><div><span>REVIEWER PAYMENT</span><h2>심사비 지급 내역</h2></div><div class="reviewer-payment-header-actions"><p>지급 상태를 변경하면 미팅 이력에도 동일하게 반영됩니다.</p><button type="button" class="primary-button reviewer-payment-add" data-open-reviewer-payment>＋ 심사비 추가</button></div></header><div class="table-wrap"><table><thead><tr><th>포켓데이 날짜</th><th>심사역</th><th>소속 투자사</th><th>참여 기업</th><th>구분</th><th>지급 상태</th></tr></thead><tbody>${rows||`<tr><td colspan="6"><div class="empty reviewer-payment-empty"><strong>등록된 심사비 지급 대상이 없습니다.</strong><span>심사비 추가 버튼을 눌러 직접 등록해 주세요.</span><button type="button" class="primary-button" data-open-reviewer-payment>＋ 첫 심사비 추가</button></div></td></tr>`}</tbody></table></div></section></div>`;
+    const rows=records.map(item=>{const manual=item.source==="심사비 지급"||String(item.id).startsWith("mtg-payment-");return `<tr><td>${fmtDate(item.date)}</td><td><button class="entity-link" data-investor="${item.investorId}">${esc(item.investor.name)}</button></td><td>${esc(item.investor.firm||"—")}</td><td><button class="entity-link" data-company="${item.companyId}">${esc(item.company.name)}</button></td><td><span class="reviewer-payment-type">${esc(item.type||"포켓데이")}</span></td><td><select class="status-select payment-select" data-payment-id="${item.id}" aria-label="${esc(item.investor.name)} 심사비 지급 상태"><option ${item.paymentStatus!=="지급"?"selected":""}>미지급</option><option ${item.paymentStatus==="지급"?"selected":""}>지급</option></select></td><td>${manual?`<button type="button" class="reviewer-payment-delete" data-delete-payment="${item.id}" aria-label="${esc(item.investor.name)} 심사비 내역 삭제">삭제</button>`:`<span class="reviewer-payment-locked" title="자동 연결된 항목은 미팅 이력에서 관리합니다.">—</span>`}</td></tr>`}).join("");
+    return `<div class="reviewer-payment-page"><section class="reviewer-payment-summary"><article><span>전체 심사 건수</span><strong>${records.length}<small>건</small></strong></article><article class="unpaid"><span>미지급</span><strong>${unpaid}<small>건</small></strong></article><article class="paid"><span>지급 완료</span><strong>${paid}<small>건</small></strong></article><article><span>참여 심사역</span><strong>${investorCount}<small>명</small></strong></article></section><section class="panel reviewer-payment-panel"><header><div><span>REVIEWER PAYMENT</span><h2>심사비 지급 내역</h2></div><div class="reviewer-payment-header-actions"><p>지급 상태를 변경하면 미팅 이력에도 동일하게 반영됩니다.</p><button type="button" class="primary-button reviewer-payment-add" data-open-reviewer-payment>＋ 심사비 추가</button></div></header><div class="table-wrap"><table><thead><tr><th>포켓데이 날짜</th><th>심사역</th><th>소속 투자사</th><th>참여 기업</th><th>구분</th><th>지급 상태</th><th>관리</th></tr></thead><tbody>${rows||`<tr><td colspan="7"><div class="empty reviewer-payment-empty"><strong>등록된 심사비 지급 대상이 없습니다.</strong><span>심사비 추가 버튼을 눌러 직접 등록해 주세요.</span><button type="button" class="primary-button" data-open-reviewer-payment>＋ 첫 심사비 추가</button></div></td></tr>`}</tbody></table></div></section></div>`;
+  }
+
+  function deletePaymentRecord(id){
+    const meeting=db.meetings.find(item=>item.id===id);
+    const manual=meeting&&(meeting.source==="심사비 지급"||String(meeting.id).startsWith("mtg-payment-"));
+    if(!manual){showToast("자동 연결된 항목은 미팅 이력에서 관리해 주세요.");return}
+    if(!window.confirm("이 심사비 지급 내역을 삭제할까요?\n연결된 미팅 이력에서도 함께 삭제됩니다."))return;
+    db.meetings=db.meetings.filter(item=>item.id!==id);
+    save();
+    render();
+    showToast("심사비 지급 내역을 삭제했습니다.");
   }
 
   function ensurePaymentModal(){
@@ -111,6 +122,7 @@
     renderAdminSidebarStats();
     bindDynamic();
     document.querySelectorAll("[data-open-reviewer-payment]").forEach(button=>button.onclick=openPaymentModal);
+    document.querySelectorAll("[data-delete-payment]").forEach(button=>button.onclick=()=>deletePaymentRecord(button.dataset.deletePayment));
     ensurePaymentNav();
   };
 

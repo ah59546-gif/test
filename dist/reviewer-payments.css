@@ -16,6 +16,10 @@
 .reviewer-payment-add{white-space:nowrap}
 .reviewer-payment-panel th,.reviewer-payment-panel td{font-size:11px}
 .reviewer-payment-type{display:inline-flex;padding:5px 8px;border-radius:999px;color:#52617b;background:#eef2f8;font-size:10px}
+.reviewer-payment-delete{border:1px solid #f0bdc6;border-radius:8px;padding:6px 10px;color:#cf3e55;background:#fff;font:700 10px inherit;cursor:pointer;transition:.18s ease}
+.reviewer-payment-delete:hover{border-color:#dc5368;background:#fff2f4}
+.reviewer-payment-delete:focus-visible{outline:3px solid rgba(220,83,104,.18);outline-offset:2px}
+.reviewer-payment-locked{color:#a3adbf}
 .reviewer-payment-empty{display:grid;justify-items:center;gap:9px}
 .reviewer-payment-empty strong{color:#21304b;font-size:13px}
 .reviewer-payment-empty span{color:#7e899d;font-size:11px}
