@@ -17,6 +17,12 @@ const investorInterestStorageKey="pocket-crm-investor-interest-companies-v1";
 let investorInterestCompanyIds=new Set(JSON.parse(localStorage.getItem(investorInterestStorageKey)||"[]"));
 function saveInvestorInterestCompanies(){localStorage.setItem(investorInterestStorageKey,JSON.stringify([...investorInterestCompanyIds]))}
 db.connectionResearch = db.connectionResearch || {};
+db.dataMigrations=db.dataMigrations||{};
+if(!db.dataMigrations.researchInvestmentStatusUnconfirmedV1){
+  Object.values(db.connectionResearch).forEach(record=>{record.investmentStatus="미확인"});
+  db.dataMigrations.researchInvestmentStatusUnconfirmedV1=new Date().toISOString();
+  localStorage.setItem(storageKey,JSON.stringify(db));
+}
 const operatorTypeOrder = ["팁스","립스","특화","스케일업"];
 const investorFirmAliases = {
   "500global":"500글로벌매니지먼트코리아",
@@ -233,15 +239,14 @@ function researchRecord(investorId,companyId="",companyName=""){
   if(stored)return {followupStatus:"미확인",investmentStatus:"모니터링",checkedAt:"",source:"",memo:"",...stored,investmentStatus:normalizeResearchInvestmentStatus(stored.investmentStatus),key};
   const related=db.meetings.filter(meeting=>meeting.investorId===investorId&&(companyId?meeting.companyId===companyId:normalizeCompanyName(com(meeting.companyId)?.name)===normalizeCompanyName(companyName))).sort((a,b)=>b.date.localeCompare(a.date));
   const latest=related[0];
-  return {key,investorId,companyId,companyName,followupStatus:latest?.followupStatus||"미확인",investmentStatus:normalizeResearchInvestmentStatus(latest?.investmentStatus),checkedAt:latest?.updatedAt||"",source:latest?"미팅 이력":"",memo:latest?.memo||""};
+  return {key,investorId,companyId,companyName,followupStatus:latest?.followupStatus||"미확인",investmentStatus:"미확인",checkedAt:latest?.updatedAt||"",source:latest?"미팅 이력":"",memo:latest?.memo||""};
 }
-const researchInvestmentOptions=["모니터링","미팅","진행중","투자완료","보육중"];
+const researchInvestmentOptions=["-","미확인","모니터링","미팅","진행중","투자완료","보육중"];
 function normalizeResearchInvestmentStatus(value=""){
-  const mapping={"미확인":"모니터링","관심":"모니터링","미투자":"모니터링","검토 전":"미팅","검토 중":"진행중","투자 확정":"진행중","투자 완료":"투자완료"};
-  return researchInvestmentOptions.includes(value)?value:mapping[value]||"모니터링";
+  return researchInvestmentOptions.includes(value)?value:"미확인";
 }
 function researchMeetingStatuses(record){
-  const investmentStatus=({"모니터링":"검토 전","미팅":"검토 중","진행중":"투자 확정","투자완료":"투자 완료","보육중":"투자 완료"})[normalizeResearchInvestmentStatus(record.investmentStatus)]||"검토 전";
+  const investmentStatus=({"-":"검토 전","미확인":"검토 전","모니터링":"검토 전","미팅":"검토 중","진행중":"투자 확정","투자완료":"투자 완료","보육중":"투자 완료"})[normalizeResearchInvestmentStatus(record.investmentStatus)]||"검토 전";
   return {followupStatus:record.followupStatus==="미확인"?"미정":record.followupStatus,investmentStatus};
 }
 function latestPocketdayMeeting(investorId,companyName){
@@ -280,7 +285,7 @@ if(!localStorage.getItem(blankResearchMeetingCleanupKey)){
   if(remaining.length!==db.meetings.length){db.meetings=remaining;save()}
   localStorage.setItem(blankResearchMeetingCleanupKey,"1");
 }
-function researchNeedsCheck(record){return record.followupStatus==="미확인"}
+function researchNeedsCheck(record){return record.followupStatus==="미확인"||["-","미확인"].includes(record.investmentStatus)}
 function researchStatusTone(value){return value==="투자완료"||value==="투자 완료"||value==="완료"?"complete":value==="보육중"?"nurture":["진행","진행중","진행 중","검토 중"].includes(value)?"progress":["예정","미팅"].includes(value)?"scheduled":value==="미확인"?"unknown":"neutral"}
 function researchStatusBadge(value){return `<span class="research-status ${researchStatusTone(value)}">${esc(value||"미확인")}</span>`}
 function researchInlineSelect(field,value,investorId,companyId,companyName){const normalizedValue=field==="investmentStatus"?normalizeResearchInvestmentStatus(value):value;const options=field==="followupStatus"?["미확인","없음","예정","진행 중","완료"]:researchInvestmentOptions;const label=field==="followupStatus"?"후속 미팅":"투자 상태";return `<label class="research-inline-select ${researchStatusTone(normalizedValue)}"><select data-inline-research data-field="${field}" data-investor-id="${investorId}" data-company-id="${companyId}" data-company-name="${esc(companyName)}" aria-label="${esc(companyName)} ${label}">${options.map(option=>`<option ${option===normalizedValue?"selected":""}>${option}</option>`).join("")}</select></label>`}
