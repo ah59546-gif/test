@@ -475,4 +475,6 @@ body[data-role="company"] .app-shell,body[data-role="investor"] .app-shell{grid-
 .pocketday-next-card{grid-template-columns:60px 1fr}.pocketday-next-icon{width:56px;height:56px;border-radius:16px}.pocketday-next-card>.pocketday-schedule-status{grid-column:2;justify-self:start}.pocketday-year-tabs{justify-content:flex-start;overflow-x:auto}.pocketday-year-tabs button{flex:0 0 auto}.pocketday-schedule-summary{grid-template-columns:1fr}.pocketday-schedule-panel{padding:16px 12px}.pocketday-schedule-panel>header{align-items:flex-start;flex-direction:column;gap:7px}.pocketday-schedule-actions{width:100%;align-items:flex-start;flex-direction:column}.pocketday-schedule-list article{grid-template-columns:78px 1fr;gap:12px}.pocketday-schedule-companies{grid-column:2}.pocketday-schedule-list article>.pocketday-schedule-status,.pocketday-edit-button{grid-column:2;justify-self:start}
 .list-header{align-items:flex-start;flex-direction:column;gap:10px}.list-header-actions{width:100%;justify-content:space-between}
 }
+.research-status.nurture,.research-inline-select.nurture{color:#7351c8;background:#eee8ff}
+
 
