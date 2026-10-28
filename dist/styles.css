@@ -397,6 +397,7 @@ body[data-role="company"] .content,body[data-role="investor"] .content{padding:0
 .pocketday-investor-list small{max-width:180px;margin-top:3px;overflow:hidden;color:#7d899f;font-size:6px;text-overflow:ellipsis;white-space:nowrap}
 .pocketday-investor-list>em{color:#8792a7;font-size:8px;font-style:normal}
 .pocketday-combined-panel{width:100%}
+.pocketday-investor-search{display:flex;justify-content:flex-end;margin:2px 0 10px}.pocketday-investor-search label{width:min(100%,320px);display:flex;align-items:center;gap:8px;padding:9px 12px;border:1px solid #dce4f1;border-radius:10px;background:#f9fbff}.pocketday-investor-search label:focus-within{border-color:#6f8eff;box-shadow:0 0 0 3px rgba(49,89,245,.09)}.pocketday-investor-search span{color:#3159f5;font-size:13px}.pocketday-investor-search input{width:100%;border:0;outline:0;color:#26334e;background:transparent;font-size:10px}.pocketday-investor-search input::placeholder{color:#9aa5b8}.pocketday-investor-search-empty{padding:28px 12px;text-align:center;color:#8792a7;font-size:9px}
 .pocketday-detail-list article.pocketday-merged-row{grid-template-columns:58px 150px minmax(0,1fr) auto;align-items:start;gap:14px;padding:16px 0}
 .pocketday-merged-investors{min-width:0}
 .pocketday-merged-investors>strong{display:block;margin:1px 0 8px;color:#65738b;font-size:7px}

@@ -324,10 +324,17 @@ function mergeCompanyPocketdayPanels(){
   const summary=historyPanel.querySelector("header>span");
   if(description)description.textContent="포켓데이 참여 기록과 회차별로 만난 심사역을 함께 확인합니다.";
   if(summary)summary.textContent=`${historyRows.length}회 · ${investorTotal}`;
+  const historyList=historyPanel.querySelector(".pocketday-detail-list");
+  const searchBar=document.createElement("div");
+  searchBar.className="pocketday-investor-search";
+  searchBar.innerHTML='<label><span>⌕</span><input type="search" data-pocketday-investor-search placeholder="심사역 이름 또는 소속으로 검색" aria-label="포켓데이 참여 심사역 검색"></label>';
+  historyPanel.insertBefore(searchBar,historyList);
   historyRows.forEach((row,index)=>{
     const investorList=investorRows[index]?.querySelector(".pocketday-investor-list");
     if(!investorList)return;
     row.classList.add("pocketday-merged-row");
+    row.dataset.pocketdayInvestorRow="";
+    investorList.querySelectorAll(":scope > div").forEach(card=>{card.dataset.investorSearch=card.textContent.trim().toLowerCase()});
     const investorSection=document.createElement("div");
     investorSection.className="pocketday-merged-investors";
     const label=document.createElement("strong");
@@ -335,6 +342,12 @@ function mergeCompanyPocketdayPanels(){
     investorSection.append(label,investorList);
     row.insertBefore(investorSection,row.lastElementChild);
   });
+  const searchEmpty=document.createElement("div");
+  searchEmpty.className="pocketday-investor-search-empty";
+  searchEmpty.dataset.pocketdayInvestorSearchEmpty="";
+  searchEmpty.hidden=true;
+  searchEmpty.textContent="검색 결과가 없습니다.";
+  historyList.after(searchEmpty);
   historyPanel.classList.add("pocketday-combined-panel");
   investorPanel.remove();
 }
@@ -416,6 +429,21 @@ document.addEventListener("click",e=>{if(e.target.closest("[data-add-company]"))
 document.addEventListener("click",e=>{const tab=e.target.closest("[data-company-list-view]");if(tab)switchView(tab.dataset.companyListView)});
 document.addEventListener("click",e=>{const edit=e.target.closest("[data-edit-research]");if(edit){openResearchModal(edit.dataset.investorId,edit.dataset.companyName,edit.dataset.companyId);return}const filter=e.target.closest("[data-research-filter]");if(filter){document.querySelectorAll("[data-research-filter]").forEach(button=>button.classList.toggle("active",button===filter));applyResearchFilters()}});
 document.addEventListener("input",e=>{if(e.target.matches("[data-research-search]"))applyResearchFilters()});
+document.addEventListener("input",e=>{
+  if(!e.target.matches("[data-pocketday-investor-search]"))return;
+  const term=e.target.value.trim().toLowerCase();
+  const rows=[...document.querySelectorAll("[data-pocketday-investor-row]")];
+  let visibleRows=0;
+  rows.forEach(row=>{
+    const cards=[...row.querySelectorAll(".pocketday-investor-list>div")];
+    cards.forEach(card=>{card.hidden=Boolean(term)&&!card.dataset.investorSearch.includes(term)});
+    const visible=!term||cards.some(card=>!card.hidden);
+    row.hidden=!visible;
+    if(visible)visibleRows+=1;
+  });
+  const empty=document.querySelector("[data-pocketday-investor-search-empty]");
+  if(empty)empty.hidden=visibleRows>0;
+});
 document.addEventListener("change",e=>{const select=e.target.closest("[data-inline-research]");if(!select)return;const {investorId,companyId,companyName,field}=select.dataset;const current=researchRecord(investorId,companyId,companyName);const key=researchKey(investorId,companyId,companyName);const record={investorId,companyId,companyName,followupStatus:current.followupStatus,investmentStatus:current.investmentStatus,checkedAt:current.checkedAt,source:current.source,memo:current.memo,updatedAt:new Date().toISOString(),[field]:select.value};syncResearchToMeeting(record);const syncedKey=researchKey(record.investorId,record.companyId,record.companyName);if(syncedKey!==key)delete db.connectionResearch[key];db.connectionResearch[syncedKey]=record;save();fillSelects();showToast(field==="followupStatus"?"후속 미팅 상태를 저장하고 미팅 이력에 반영했습니다.":"투자 상태를 저장하고 미팅 이력에 반영했습니다.");render()});
 document.addEventListener("change",e=>{const followup=e.target.closest("[data-followup-id]");const payment=e.target.closest("[data-payment-id]");const control=followup||payment;if(!control)return;const meeting=db.meetings.find(item=>item.id===(followup?.dataset.followupId||payment?.dataset.paymentId));if(!meeting)return;if(followup)meeting.followupStatus=followup.value;if(payment)meeting.paymentStatus=payment.value;meeting.updatedAt=today();save();showToast(followup?"후속 상태를 저장했습니다.":"지급 상태를 저장했습니다.")});
 document.querySelectorAll("[data-close-pocketday-modal]").forEach(button=>button.onclick=closePocketdayModal);
