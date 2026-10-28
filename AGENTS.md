@@ -24,5 +24,4 @@ Do not publish `.git/`, credentials, `.openai/`, temporary archives, or browser-
 
 ## Runtime data
 
-The application currently saves manual edits in browser localStorage. Publishing code does not transfer records across domains or browsers. Preserve stored records and existing storage keys during UI changes; code auto-deployment is not cross-domain data synchronization.
-
+The application keeps its established localStorage keys as an offline/browser cache and synchronizes mutable CRM records through the `pocket-kpi-crm-prod` Supabase project. The shared table is protected by RLS and only the explicitly allowed Pocket CRM accounts can read or write it. Preserve the storage keys and the `dist/shared-sync.js` bootstrap when changing runtime behavior so the GitHub Pages and Sites deployments continue to use the same records.

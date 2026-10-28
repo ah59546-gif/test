@@ -13,7 +13,7 @@ Follow `AGENTS.md` when editing this project. A requested application change inc
 
 ## Data storage
 
-Manual edits are stored in browser localStorage. Existing data on the Sites domain does not automatically transfer to the GitHub Pages domain. Deployment updates code, not records saved in other browsers or domains.
+Manual edits keep using the existing browser localStorage keys as a local cache and are synchronized to the `pocket-kpi-crm-prod` Supabase project. After signing in with an allowed account, the GitHub Pages and Sites deployments read and write the same CRM records. On the first connection, sign in first on the domain that already contains the records to seed the shared store.
 
 ## Local preview
 
