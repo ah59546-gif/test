@@ -3,7 +3,7 @@
 ## Live sites
 
 - GitHub Pages: https://ah59546-gif.github.io/test/
-- Sites: https://pocket-investor-crm-20261014.pocketcompany.chatgpt.site/
+- Sites: https://pocket-investor-crm-20261028.lemony-apple-7418.chatgpt.site/
 
 ## Automatic GitHub deployment
 
@@ -18,3 +18,4 @@ Manual edits are stored in browser localStorage. Existing data on the Sites doma
 ## Local preview
 
 Run `node preview-server.mjs` and open http://127.0.0.1:4173.
+

@@ -6,8 +6,8 @@
 - GitHub source repository: `ah59546-gif/test`, default branch `main`.
 - GitHub Pages URL: `https://ah59546-gif.github.io/test/`.
 - GitHub deployment workflow: `.github/workflows/deploy-pages.yml` (`Deploy Pocket Day`). Pushes to `main` publish `dist/` automatically.
-- Existing Sites project: `appgprj_6acf36fbcf2c8191b41ad1e1111a8d98` (see `.openai/hosting.json`).
-- Existing Sites URL: `https://pocket-investor-crm-20261014.pocketcompany.chatgpt.site/`.
+- Existing Sites project: `appgprj_6ae187aa70c081918dce83e3a2da1d1e` (see `.openai/hosting.json`).
+- Existing Sites URL: `https://pocket-investor-crm-20261028.lemony-apple-7418.chatgpt.site/`.
 
 ## Completion includes publication
 
@@ -25,3 +25,4 @@ Do not publish `.git/`, credentials, `.openai/`, temporary archives, or browser-
 ## Runtime data
 
 The application currently saves manual edits in browser localStorage. Publishing code does not transfer records across domains or browsers. Preserve stored records and existing storage keys during UI changes; code auto-deployment is not cross-domain data synchronization.
+
