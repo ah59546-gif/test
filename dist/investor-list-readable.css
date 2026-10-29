@@ -18,10 +18,10 @@
 
 .investor-list-table th:nth-child(1){width:220px;}
 .investor-list-table th:nth-child(2){width:270px;}
-.investor-list-table th:nth-child(3){width:180px;}
-.investor-list-table th:nth-child(4){width:120px;}
-.investor-list-table th:nth-child(5){width:160px;}
-.investor-list-table th:nth-child(6){width:210px;}
+.investor-list-table th:nth-child(3){width:120px;}
+.investor-list-table th:nth-child(4){width:160px;}
+.investor-list-table th:nth-child(5){width:210px;}
+.investor-list-table th:nth-child(6){width:180px;}
 .investor-list-table th:nth-child(7){width:110px;}
 .investor-list-table th:nth-child(8){width:110px;}
 
