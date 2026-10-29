@@ -38,7 +38,7 @@
 .db-table:has(th[data-remaining-rounds]) .entity-link{font-size:12px!important}
 .db-table:has(th[data-remaining-rounds]) .entity-mark{width:36px;height:36px;font-size:11px!important}
 .db-table:has(th[data-remaining-rounds]) :where(.entity-cell small,.tag){font-size:10px!important}
-.db-table:has(th[data-remaining-rounds]) table{min-width:1180px}
+.db-table:has(th[data-remaining-rounds]) table{min-width:1040px}
 .db-table th[data-remaining-rounds],.db-table th[data-company-payment-status],.company-remaining-rounds,.company-payment-status{width:112px;padding-left:8px!important;padding-right:8px!important;text-align:center;white-space:nowrap}
 .company-status-filter{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:5px;min-width:92px;color:#5f6c84;font-weight:800;cursor:pointer}.company-status-filter i{font-style:normal;font-size:8px;color:#3159f5}.company-status-filter select{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}.company-status-filter:focus-within{outline:2px solid #3159f5;outline-offset:3px;border-radius:4px}
 .company-remaining-rounds{color:#8b96aa;font-weight:700}
@@ -90,4 +90,5 @@
   .company-list-tabs{width:100%}
   .company-note-panel{padding:17px 15px}.company-note-panel>header,.company-note-panel>footer{align-items:flex-start;flex-direction:column}.company-note-panel>footer>div{width:100%;justify-content:space-between}.company-note-panel footer button{margin-left:auto}
 }
+
 

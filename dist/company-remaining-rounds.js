@@ -261,6 +261,11 @@
     });
     if(!table||table.querySelector("th[data-remaining-rounds]"))return;
 
+    table.querySelectorAll("thead th")[1]?.remove();
+    table.querySelectorAll("tbody tr").forEach(row=>{
+      if(row.cells.length>1)row.cells[1]?.remove();
+    });
+
     const heading=document.createElement("th");
     heading.dataset.remainingRounds="";
     heading.setAttribute("aria-label","진행상태 필터");
@@ -282,7 +287,7 @@
     table.querySelectorAll("tbody tr").forEach(row=>{
       const onlyCell=row.cells.length===1?row.cells[0]:null;
       if(onlyCell&&onlyCell.colSpan>1){
-        onlyCell.colSpan=8;
+        onlyCell.colSpan=7;
         return;
       }
       const companyId=row.querySelector("[data-company]")?.dataset.company||"";
@@ -339,7 +344,7 @@
     const emptyRow=document.createElement("tr");
     emptyRow.dataset.companyStatusEmpty="";
     emptyRow.hidden=true;
-    emptyRow.innerHTML='<td colspan="8"><div class="empty">선택한 진행상태의 기업이 없습니다.</div></td>';
+    emptyRow.innerHTML='<td colspan="7"><div class="empty">선택한 진행상태의 기업이 없습니다.</div></td>';
     table.tBodies[0]?.append(emptyRow);
     applyCompanyStatusFilter(table);
   }
@@ -394,4 +399,5 @@
   syncAdminCompanyDetails();
   syncCompanyNote();
 })();
+
 
