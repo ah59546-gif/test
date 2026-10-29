@@ -43,6 +43,9 @@
 .company-remaining-select[data-state="대기"]{color:#9a6b00;border-color:#f0d58f;background:#fff7df}
 .company-remaining-select[data-state="완료"]{color:#087b5d;border-color:#aee1cf;background:#e8f7f1}
 .company-remaining-select[data-state="진행중"]{color:#3159d9;border-color:#bccafa;background:#eef2ff}
+.content .company-list-type-badge{display:table;width:max-content;margin-top:5px;padding:3px 7px;border-radius:999px;font-size:9px!important;font-weight:800;line-height:1}
+.content .company-list-type-badge.pocket{color:#3159d9;background:#e9efff}
+.content .company-list-type-badge.external{color:#7651bd;background:#f0eaff}
 .company-detail-logo-stack{display:grid;flex:none;justify-items:center;gap:9px}
 .company-detail-meta-row{display:grid;grid-template-columns:104px 104px;gap:8px}
 .company-detail-remaining-status{width:104px;display:grid;justify-items:center;gap:3px;padding:8px 10px;border:1px solid #dfe5ef;border-radius:11px;color:#56637b;background:#f8f9fc;font-weight:800}
@@ -81,4 +84,5 @@
   .company-list-tabs{width:100%}
   .company-note-panel{padding:17px 15px}.company-note-panel>header,.company-note-panel>footer{align-items:flex-start;flex-direction:column}.company-note-panel>footer>div{width:100%;justify-content:space-between}.company-note-panel footer button{margin-left:auto}
 }
+
 

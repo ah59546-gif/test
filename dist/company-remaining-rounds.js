@@ -252,6 +252,7 @@
     heading.setAttribute("aria-label","잔여회차");
     table.querySelector("thead tr")?.append(heading);
 
+    const savedCompanyTypes=readCompanyTypes();
     table.querySelectorAll("tbody tr").forEach(row=>{
       const onlyCell=row.cells.length===1?row.cells[0]:null;
       if(onlyCell&&onlyCell.colSpan>1){
@@ -259,6 +260,16 @@
         return;
       }
       const companyId=row.querySelector("[data-company]")?.dataset.company||"";
+      const companyLink=row.querySelector("[data-company]");
+      const savedCompanyType=savedCompanyTypes[companyId];
+      const companyType=companyTypes.includes(savedCompanyType)?savedCompanyType:"포켓";
+      if(companyLink){
+        const typeBadge=document.createElement("span");
+        typeBadge.className=`company-list-type-badge ${companyType==="외부"?"external":"pocket"}`;
+        typeBadge.textContent=companyType;
+        typeBadge.setAttribute("aria-label",`기업 구분 ${companyType}`);
+        companyLink.insertAdjacentElement("afterend",typeBadge);
+      }
       const cell=document.createElement("td");
       cell.className="company-remaining-rounds";
       const select=document.createElement("select");
@@ -322,4 +333,5 @@
   syncAdminCompanyDetails();
   syncCompanyNote();
 })();
+
 
