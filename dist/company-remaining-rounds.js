@@ -249,7 +249,7 @@
 
     const heading=document.createElement("th");
     heading.dataset.remainingRounds="";
-    heading.textContent="잔여회차";
+    heading.setAttribute("aria-label","잔여회차");
     table.querySelector("thead tr")?.append(heading);
 
     table.querySelectorAll("tbody tr").forEach(row=>{
