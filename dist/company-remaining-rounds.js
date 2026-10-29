@@ -6,6 +6,7 @@
   const companyNoteStorageKey="pocket-crm-company-notes-v1";
   const statuses=["-","대기","완료","진행중"];
   const companyTypes=["포켓","외부"];
+  let activeStatusFilter="";
   if(!root)return;
 
   function readStatuses(){
@@ -249,7 +250,14 @@
 
     const heading=document.createElement("th");
     heading.dataset.remainingRounds="";
-    heading.setAttribute("aria-label","잔여회차");
+    heading.setAttribute("aria-label","진행상태 필터");
+    heading.innerHTML=`<label class="company-status-filter"><span>진행상태</span><i aria-hidden="true">▼</i><select aria-label="진행상태 필터"><option value="">전체</option>${statuses.map(status=>`<option value="${status}">${status}</option>`).join("")}</select></label>`;
+    const filterSelect=heading.querySelector("select");
+    filterSelect.value=activeStatusFilter;
+    filterSelect.addEventListener("change",()=>{
+      activeStatusFilter=filterSelect.value;
+      applyCompanyStatusFilter(table);
+    });
     table.querySelector("thead tr")?.append(heading);
 
     const savedCompanyTypes=readCompanyTypes();
@@ -279,8 +287,10 @@
       const saved=readStatuses()[companyId];
       select.value=statuses.includes(saved)?saved:"-";
       select.dataset.state=select.value;
+      row.dataset.companyProgressStatus=select.value;
       select.addEventListener("change",()=>{
         select.dataset.state=select.value;
+        row.dataset.companyProgressStatus=select.value;
         if(companyId){
           saveStatus(companyId,select.value);
           render();
@@ -289,6 +299,19 @@
       cell.append(select);
       row.append(cell);
     });
+    const emptyRow=document.createElement("tr");
+    emptyRow.dataset.companyStatusEmpty="";
+    emptyRow.hidden=true;
+    emptyRow.innerHTML='<td colspan="7"><div class="empty">선택한 진행상태의 기업이 없습니다.</div></td>';
+    table.tBodies[0]?.append(emptyRow);
+    applyCompanyStatusFilter(table);
+  }
+
+  function applyCompanyStatusFilter(table){
+    const rows=[...table.querySelectorAll("tbody tr[data-company-progress-status]")];
+    rows.forEach(row=>{row.hidden=Boolean(activeStatusFilter)&&row.dataset.companyProgressStatus!==activeStatusFilter});
+    const emptyRow=table.querySelector("[data-company-status-empty]");
+    if(emptyRow)emptyRow.hidden=!activeStatusFilter||rows.some(row=>!row.hidden);
   }
 
   function syncAll(){
@@ -333,5 +356,4 @@
   syncAdminCompanyDetails();
   syncCompanyNote();
 })();
-
 
