@@ -234,20 +234,25 @@
     renderChip();
     setStatus("saving","공용 데이터 확인 중");
     try{
-      await pullRemote({reload:true});
+      const changed=await pullRemote({reload:true});
+      if(changed)return false;
       syncReady=true;
       [...pendingKeys].forEach(queuePush);
       setStatus("ok","공용 데이터 연결됨");
+      return true;
     }catch(error){
       console.error("Pocket CRM shared sync initialization failed",error);
       setStatus("error","연결 확인 필요");
+      return true;
     }
   }
 
   async function init(){
     injectStyles();
     parseAuthRedirect();
-    if(await ensureSession())await connectAndSync();
+    let ready=true;
+    if(await ensureSession())ready=await connectAndSync();
+    if(ready!==false)window.dispatchEvent(new CustomEvent("pocket-crm-shared-ready"));
 
     document.addEventListener("visibilitychange",()=>{
       if(document.visibilityState==="visible"&&syncReady&&session)pullRemote({reload:true}).catch(()=>setStatus("error","연결 확인 필요"));

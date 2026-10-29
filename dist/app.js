@@ -39,6 +39,8 @@ const investorFirmAliases = {
   "lb인베스트먼트":"엘비인베스트먼트",
   "sparklabs":"스파크랩",
   "스파크랩스":"스파크랩",
+  "jch인베스트먼트":"제이씨에이치인베스트먼트",
+  "스마일게이트":"스마일게이트인베스트먼트",
   "서울대기술지주":"서울대학교기술지주",
   "포스텍홀딩스":"포항공과대학교기술지주",
   "한양대기술지주":"한양대학교기술지주회사",
@@ -67,6 +69,35 @@ const sheetScheduleSeed=pocketdayScheduleSeed.filter(event=>event.date>="2026-04
 sheetScheduleSeed.forEach(seed=>{const existing=pocketdaySchedule.find(event=>event.date===seed.date);if(!existing){pocketdaySchedule.push({...seed,companies:[...seed.companies],investors:[...(seed.investors||[])]});return}existing.companies=[...new Set([...(existing.companies||[]),...seed.companies])];existing.investors=[...(seed.investors||[])];existing.status=existing.status||seed.status;existing.round=existing.round||seed.round});
 pocketdaySchedule.sort((a,b)=>b.date.localeCompare(a.date));
 function savePocketdaySchedule(){localStorage.setItem(pocketdayScheduleKey,JSON.stringify(pocketdaySchedule))}
+function normalizeInvestorPersonName(value=""){return String(value).toLowerCase().replace(/\s+/g,"").replace(/[^0-9a-z가-힣]/g,"")}
+function pocketdayInvestorFirmMap(){
+  const latestByName=new Map();
+  [...pocketdaySchedule].sort((a,b)=>b.date.localeCompare(a.date)).forEach(event=>{
+    (event.investors||[]).forEach(value=>{
+      const investor=pocketdayInvestorDetails(value);
+      const key=normalizeInvestorPersonName(investor.name);
+      if(key&&investor.firm&&!latestByName.has(key))latestByName.set(key,investor.firm);
+    });
+  });
+  return latestByName;
+}
+function syncInvestorFirmsFromPocketday(){
+  const firmsByInvestor=pocketdayInvestorFirmMap();
+  let changed=false;
+  db.investors.forEach(person=>{
+    if(!String(person.firm||"").trim()){
+      const matchedFirm=firmsByInvestor.get(normalizeInvestorPersonName(person.name))||"";
+      if(matchedFirm){person.firm=matchedFirm;changed=true}
+    }
+    if(!String(person.operatorType||"").trim()&&person.firm){
+      const matchedType=operatorTypeForFirm(person.firm);
+      if(matchedType){person.operatorType=matchedType;changed=true}
+    }
+  });
+  if(changed)localStorage.setItem(storageKey,JSON.stringify(db));
+  return changed;
+}
+window.addEventListener("pocket-crm-shared-ready",()=>{if(syncInvestorFirmsFromPocketday())render()},{once:true});
 const pocketdayRoundResetKey="pocket-crm-pocketday-rounds-from-20260106-v1";
 if(!localStorage.getItem(pocketdayRoundResetKey)){
   [...pocketdaySchedule].sort((a,b)=>a.date.localeCompare(b.date)).forEach((event,index)=>{event.round=index+1});
@@ -179,6 +210,7 @@ function pocketdayInvestorDetails(value=""){
     const detailStart=firm.indexOf("(");
     if(detailStart>2)firm=firm.slice(0,detailStart).trim();
   }
+  firm=firm.replace(/\s+(팁스|TIPS)$/i,"").replace(/\s+투자팀\s+매니저$/,"").trim();
   return {name,firm};
 }
 function companyWorkspaceData(company){
@@ -490,5 +522,5 @@ document.getElementById("researchModal").onclick=e=>{if(e.target.id==="researchM
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closePocketdayModal()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeResearchModal()});
 document.getElementById("researchForm").onsubmit=e=>{e.preventDefault();const form=e.currentTarget;const x=Object.fromEntries(new FormData(form).entries());const key=researchKey(x.investorId,x.companyId,x.companyName);const current=researchRecord(x.investorId,x.companyId,x.companyName);const record={investorId:x.investorId,companyId:x.companyId,companyName:x.companyName,followupStatus:x.followupStatus,investmentStatus:x.investmentStatus,checkedAt:current.checkedAt,source:current.source,memo:x.memo.trim(),updatedAt:today()};syncResearchToMeeting(record);const syncedKey=researchKey(record.investorId,record.companyId,record.companyName);if(syncedKey!==key)delete db.connectionResearch[key];db.connectionResearch[syncedKey]=record;save();fillSelects();form.reset();closeResearchModal();showToast("기업 후속 현황을 저장하고 미팅 이력에 반영했습니다.");render()};
-document.getElementById("pocketdayForm").onsubmit=e=>{e.preventDefault();const form=e.currentTarget;const x=Object.fromEntries(new FormData(form).entries());const eventId=x.eventId||`manual-${Date.now()}`;const values={id:eventId,round:x.round?Number(x.round):null,date:x.date.trim(),operationType:x.operationType,status:x.status,companies:x.companies.split(/[,\n]/).map(value=>value.trim()).filter(Boolean),investors:x.investors.split(/\n/).map(value=>value.trim()).filter(Boolean)};if(x.eventId){const index=pocketdaySchedule.findIndex(event=>event.id===x.eventId);if(index<0){showToast("수정할 일정을 찾지 못했습니다.");return}pocketdaySchedule[index]=values}else{pocketdaySchedule.push(values)}pocketdaySchedule.sort((a,b)=>b.date.localeCompare(a.date));pocketdayYear=Number(values.date.match(/\d{4}/)?.[0])||pocketdayYear;savePocketdaySchedule();form.reset();closePocketdayModal();showToast(x.eventId?"포켓데이 일정을 수정했습니다.":"포켓데이 일정을 추가했습니다.");render()};
+document.getElementById("pocketdayForm").onsubmit=e=>{e.preventDefault();const form=e.currentTarget;const x=Object.fromEntries(new FormData(form).entries());const eventId=x.eventId||`manual-${Date.now()}`;const values={id:eventId,round:x.round?Number(x.round):null,date:x.date.trim(),operationType:x.operationType,status:x.status,companies:x.companies.split(/[,\n]/).map(value=>value.trim()).filter(Boolean),investors:x.investors.split(/\n/).map(value=>value.trim()).filter(Boolean)};if(x.eventId){const index=pocketdaySchedule.findIndex(event=>event.id===x.eventId);if(index<0){showToast("수정할 일정을 찾지 못했습니다.");return}pocketdaySchedule[index]=values}else{pocketdaySchedule.push(values)}pocketdaySchedule.sort((a,b)=>b.date.localeCompare(a.date));pocketdayYear=Number(values.date.match(/\d{4}/)?.[0])||pocketdayYear;savePocketdaySchedule();syncInvestorFirmsFromPocketday();form.reset();closePocketdayModal();showToast(x.eventId?"포켓데이 일정을 수정했습니다.":"포켓데이 일정을 추가했습니다.");render()};
 
