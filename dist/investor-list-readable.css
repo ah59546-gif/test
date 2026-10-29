@@ -25,6 +25,97 @@
 .investor-list-table th:nth-child(7){width:110px;}
 .investor-list-table th:nth-child(8){width:110px;}
 
+.investor-filter-panel{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:14px;
+  align-items:stretch;
+  margin:14px 0;
+  padding:14px 16px;
+  border:1px solid #dfe5f0;
+  border-radius:14px;
+  background:#fff;
+  box-shadow:0 8px 24px rgba(31,49,105,.04);
+}
+
+.investor-filter-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(140px,1fr));
+  gap:10px;
+}
+
+.investor-filter-grid label{
+  display:grid;
+  gap:6px;
+  min-width:0;
+}
+
+.investor-filter-grid label>span{
+  color:#65728b;
+  font-size:10px;
+  font-weight:800;
+}
+
+.investor-filter-grid select{
+  width:100%;
+  height:40px;
+  padding:0 34px 0 12px;
+  border:1px solid #d8e1f0;
+  border-radius:10px;
+  color:#24324f;
+  background:#f9fbff;
+  font-size:11px;
+  font-weight:700;
+  outline:0;
+}
+
+.investor-filter-grid select:focus{
+  border-color:#3159f5;
+  box-shadow:0 0 0 3px rgba(49,89,245,.1);
+}
+
+.investor-filter-meta{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  min-height:40px;
+  white-space:nowrap;
+}
+
+.investor-filter-meta span{
+  color:#7b879d;
+  font-size:10px;
+}
+
+.investor-filter-meta strong{
+  color:#3159f5;
+  font-size:13px;
+}
+
+.investor-filter-meta button{
+  height:40px;
+  padding:0 13px;
+  border:1px solid #cfd9ec;
+  border-radius:10px;
+  color:#52617d;
+  background:#fff;
+  font-size:10px;
+  font-weight:800;
+  cursor:pointer;
+}
+
+.investor-filter-meta button:hover:not(:disabled){
+  border-color:#3159f5;
+  color:#3159f5;
+  background:#f4f7ff;
+}
+
+.investor-filter-meta button:disabled{
+  opacity:.45;
+  cursor:default;
+}
+
 .db-table:has(tbody [data-investor]) td{
   padding:15px 16px;
   font-size:12px;
@@ -49,6 +140,16 @@
 .db-table:has(tbody [data-investor]) .operator-type,
 .db-table:has(tbody [data-investor]) .tag{
   font-size:10px;
+}
+
+@media(max-width:1100px){
+  .investor-filter-grid{grid-template-columns:repeat(2,minmax(150px,1fr));}
+}
+
+@media(max-width:620px){
+  .investor-filter-grid{grid-template-columns:1fr;}
+  .investor-filter-meta{align-items:stretch;flex-direction:column;}
+  .investor-filter-meta button{width:100%;}
 }
 
 
