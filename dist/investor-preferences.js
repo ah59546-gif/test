@@ -5,7 +5,7 @@
   const markerDot=person=>person?.marker?`<span class="investor-status-dot ${person.marker}" aria-label="${person.marker==="red"?"빨간점":"노란점"} 표시"></span>`:"";
   const investorFilters={operatorType:"",round:"",focus:"",fund:""};
   const uniqueValues=values=>[...new Set(values.map(value=>String(value||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"ko"));
-  const filterSelect=(label,key,values)=>`<select data-investor-filter="${key}" aria-label="${label} 필터" title="${label} 필터"><option value="">전체</option>${values.map(value=>`<option value="${esc(value)}" ${investorFilters[key]===value?"selected":""}>${esc(value)}</option>`).join("")}</select>`;
+  const filterSelect=(label,key,values)=>`<label class="investor-filter-trigger ${investorFilters[key]?"is-active":""}" title="${label} 필터${investorFilters[key]?` · ${esc(investorFilters[key])}`:""}"><span aria-hidden="true">▼</span><select data-investor-filter="${key}" aria-label="${label} 필터"><option value="">전체</option>${values.map(value=>`<option value="${esc(value)}" ${investorFilters[key]===value?"selected":""}>${esc(value)}</option>`).join("")}</select></label>`;
   const filterHeader=(heading,label,key,values)=>`<th><div class="investor-header-filter"><span>${heading}</span>${filterSelect(label,key,values)}</div></th>`;
 
   db.investors.forEach(person=>{
