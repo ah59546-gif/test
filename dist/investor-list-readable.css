@@ -3,9 +3,27 @@
   font-size:11px;
 }
 
-.investor-list-table table{
-  min-width:1280px;
+.investor-list-table .table-wrap{
+  overflow-x:auto;
 }
+
+.investor-list-table table{
+  min-width:1380px;
+  table-layout:fixed;
+}
+
+.investor-list-table th{
+  white-space:nowrap;
+}
+
+.investor-list-table th:nth-child(1){width:220px;}
+.investor-list-table th:nth-child(2){width:270px;}
+.investor-list-table th:nth-child(3){width:180px;}
+.investor-list-table th:nth-child(4){width:120px;}
+.investor-list-table th:nth-child(5){width:160px;}
+.investor-list-table th:nth-child(6){width:210px;}
+.investor-list-table th:nth-child(7){width:110px;}
+.investor-list-table th:nth-child(8){width:110px;}
 
 .db-table:has(tbody [data-investor]) td{
   padding:15px 16px;
