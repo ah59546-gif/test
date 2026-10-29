@@ -1,4 +1,5 @@
 const importedInvestorNames = ["김범준","송지한","곽선주","박진","임호찬","이희정","정연택","김동욱","김유나","박석민","임현성","엄건호","김중윤","임해룡","정윤섭","김서윤","이성문","김현준","이지연","장두현","정상민","이인호","염원준","함우승","양종오","안우진","황진수","김진국","김천우","오유택","구성민","김태훈","김지원","박현선","장민규","김민지","안수진","박준하","강비웅","김지영","김연주","최평호","김명진","이상륜","정현재","김창화","최성락","손지연","박성순","김지윤","강승순","이현정","김새미","이창묵","주연우","조정민","김민혜","윤두원","박희창","홍선기","유준모","오상민","한상욱","임성중","신재민","박진영","오승택","안준현","황소리"];
+const sheetInvestorNames20260630 = ["임해룡","김중윤","이재린","곽선주","정석환","김현식","박유진","이영상","배상기","김창화","고태호","손지연","김나리","김병희","김도형","최동은","강주석","박보훈","강현진","김유나","최정원","김명진","성강일","신우철","이경훈","전진형","김용태","변장원","황현정","이영오","배민욱","오진석","이경일","박은영","윤종혁","임현성","김택우","김형식","김수정","박정현","고민철","신재민","강승순","서동욱"];
 const investorsSeed = importedInvestorNames.map((name,index)=>({id:`inv-archive-${index+1}`,name,firm:"",fund:"",operatorType:"",title:"",email:"",phone:"",focus:[]}));
 const importedCompanyAliases = {"한국고량주":"한국고량주농업회사법인","한국고량주농업회사법인":"한국고량주농업회사법인","성완인터네셔널":"성완인터내셔널","알리아드바이오":"알리아드바이오파마"};
 function cleanImportedCompanyName(value=""){let name=String(value).replace(/^\[신규\]\s*/,"").split("(")[0].split(" - ")[0].replace(/\/\/.*/,"").replace(/^주식회사\s+/,"").trim();const compact=name.replace(/\s+/g,"");return importedCompanyAliases[compact]||name}
@@ -13,6 +14,8 @@ const storageKey = "pocket-crm-relational-v2";
 const companyRemainingRoundStorageKey="pocket-crm-company-remaining-rounds-v1";
 const saved = JSON.parse(localStorage.getItem(storageKey) || "null");
 const db = saved || { investors:investorsSeed, companies:companiesSeed, meetings:meetingsSeed };
+const existingInvestorNames=new Set(db.investors.map(person=>String(person.name||"").trim()).filter(Boolean));
+sheetInvestorNames20260630.forEach((name,index)=>{if(existingInvestorNames.has(name))return;db.investors.push({id:`inv-sheet-20260630-${index+1}`,name,firm:"",fund:"",operatorType:"",title:"",email:"",phone:"",focus:[]});existingInvestorNames.add(name)});
 const investorInterestStorageKey="pocket-crm-investor-interest-companies-v1";
 let investorInterestCompanyIds=new Set(JSON.parse(localStorage.getItem(investorInterestStorageKey)||"[]"));
 function saveInvestorInterestCompanies(){localStorage.setItem(investorInterestStorageKey,JSON.stringify([...investorInterestCompanyIds]))}
@@ -55,6 +58,8 @@ const statusOrder = ["검토 전","검토 중","투자 확정","투자 완료","
 const pocketdayScheduleSeed = window.pocketdayArchiveSeed||[];
 const pocketdayScheduleKey = "pocket-crm-pocketday-schedule-v4";
 let pocketdaySchedule = JSON.parse(localStorage.getItem(pocketdayScheduleKey)||"null")||pocketdayScheduleSeed.map(event=>({...event,companies:[...event.companies],investors:[...(event.investors||[])]}));
+const sheetScheduleSeed=pocketdayScheduleSeed.filter(event=>event.date>="2026-04-14"&&event.date<="2026-06-30");
+sheetScheduleSeed.forEach(seed=>{const existing=pocketdaySchedule.find(event=>event.date===seed.date);if(!existing){pocketdaySchedule.push({...seed,companies:[...seed.companies],investors:[...(seed.investors||[])]});return}existing.companies=[...new Set([...(existing.companies||[]),...seed.companies])];existing.investors=[...new Set([...(existing.investors||[]),...(seed.investors||[])])];existing.status=existing.status||seed.status;existing.round=existing.round||seed.round});
 pocketdaySchedule.sort((a,b)=>b.date.localeCompare(a.date));
 function savePocketdaySchedule(){localStorage.setItem(pocketdayScheduleKey,JSON.stringify(pocketdaySchedule))}
 const pocketdayRoundResetKey="pocket-crm-pocketday-rounds-from-20260106-v1";
