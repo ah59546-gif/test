@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./styles.css?v=20261028-pocketday-readable-type" />
+    <link rel="stylesheet" href="./styles.css?v=20261029-company-valuation" />
     <link rel="stylesheet" href="./pocketday-company-search.css?v=20261026" />
     <link rel="stylesheet" href="./reviewer-payments.css?v=20261028-reviewer-search" />
     <link rel="stylesheet" href="./investor-list-readable.css?v=20261026" />
@@ -170,7 +170,10 @@
             <label><span>기업명 *</span><input name="name" required /></label>
             <label><span>대표자</span><input name="ceo" placeholder="예: 김대표" /></label>
             <label><span>업종</span><input name="sector" placeholder="예: 바이오, SaaS" /></label>
-            <label><span>투자 유치 단계</span><input name="stage" placeholder="예: Seed, Pre-A" /></label>
+            <div class="form-field-pair">
+              <label><span>투자 유치 단계</span><input name="stage" placeholder="예: Seed, Pre-A" /></label>
+              <label><span>기업 밸류</span><input name="valuation" placeholder="예: 50억 원" /></label>
+            </div>
             <label><span>설립일 / 업력</span><input name="founded" placeholder="예: 2022. 03. 15. (4년차)" /></label>
             <label><span>이메일</span><input name="email" type="email" placeholder="contact@company.com" /></label>
             <label><span>연락처</span><input name="phone" type="tel" placeholder="010-0000-0000" /></label>
@@ -235,7 +238,7 @@
     <script src="./shared-sync.js?v=20261028-no-login"></script>
     <script src="./houses.js"></script>
     <script src="./pocketday-archive.js"></script>
-  <script src="./app.js?v=20261029-company-type"></script>
+  <script src="./app.js?v=20261029-company-valuation"></script>
   <script src="./reviewer-payments.js?v=20261028-reviewer-search"></script>
   <script src="./pocketday-enter-save.js?v=20261026"></script>
   <script src="./pocketday-company-search.js?v=20261026"></script>
