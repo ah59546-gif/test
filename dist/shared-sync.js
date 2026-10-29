@@ -12,6 +12,7 @@
     "pocket-crm-pocketday-schedule-v4",
     "pocket-crm-pocketday-operation-types-v1",
     "pocket-crm-company-remaining-rounds-v1",
+    "pocket-crm-company-payment-status-v1",
     "pocket-crm-company-types-v1",
     "pocket-crm-admin-company-terms-v1",
     "pocket-crm-company-notes-v1",
@@ -262,4 +263,3 @@
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});
   else init();
 })();
-

@@ -1,10 +1,12 @@
 (()=>{
   const root=document.getElementById("viewRoot");
   const storageKey="pocket-crm-company-remaining-rounds-v1";
+  const paymentStorageKey="pocket-crm-company-payment-status-v1";
   const companyTypeStorageKey="pocket-crm-company-types-v1";
   const adminMetaStorageKey="pocket-crm-admin-company-terms-v1";
   const companyNoteStorageKey="pocket-crm-company-notes-v1";
   const statuses=["-","대기","완료","진행중"];
+  const paymentStatuses=["-","결제완료","미결제","선잔금"];
   const companyTypes=["포켓","외부"];
   let activeStatusFilter="";
   if(!root)return;
@@ -18,6 +20,17 @@
     if(status==="-")delete saved[companyId];
     else saved[companyId]=status;
     localStorage.setItem(storageKey,JSON.stringify(saved));
+  }
+
+  function readPaymentStatuses(){
+    try{return JSON.parse(localStorage.getItem(paymentStorageKey)||"{}")}catch{return {}}
+  }
+
+  function savePaymentStatus(companyId,status){
+    const saved=readPaymentStatuses();
+    if(status==="-")delete saved[companyId];
+    else saved[companyId]=status;
+    localStorage.setItem(paymentStorageKey,JSON.stringify(saved));
   }
 
   function readCompanyTypes(){
@@ -259,12 +272,17 @@
       applyCompanyStatusFilter(table);
     });
     table.querySelector("thead tr")?.append(heading);
+    const paymentHeading=document.createElement("th");
+    paymentHeading.dataset.companyPaymentStatus="";
+    paymentHeading.textContent="결제상태";
+    table.querySelector("thead tr")?.append(paymentHeading);
 
     const savedCompanyTypes=readCompanyTypes();
+    const savedPaymentStatuses=readPaymentStatuses();
     table.querySelectorAll("tbody tr").forEach(row=>{
       const onlyCell=row.cells.length===1?row.cells[0]:null;
       if(onlyCell&&onlyCell.colSpan>1){
-        onlyCell.colSpan=7;
+        onlyCell.colSpan=8;
         return;
       }
       const companyId=row.querySelector("[data-company]")?.dataset.company||"";
@@ -298,11 +316,30 @@
       });
       cell.append(select);
       row.append(cell);
+
+      const paymentCell=document.createElement("td");
+      paymentCell.className="company-payment-status";
+      const paymentSelect=document.createElement("select");
+      paymentSelect.className="company-payment-select";
+      paymentSelect.setAttribute("aria-label",`${row.querySelector("[data-company]")?.textContent.trim()||"기업"} 결제상태`);
+      paymentSelect.innerHTML=paymentStatuses.map(status=>`<option value="${status}">${status}</option>`).join("");
+      const savedPayment=savedPaymentStatuses[companyId];
+      paymentSelect.value=paymentStatuses.includes(savedPayment)?savedPayment:"-";
+      paymentSelect.dataset.state=paymentSelect.value;
+      paymentSelect.addEventListener("change",()=>{
+        paymentSelect.dataset.state=paymentSelect.value;
+        if(companyId){
+          savePaymentStatus(companyId,paymentSelect.value);
+          if(typeof showToast==="function")showToast("결제상태를 저장했습니다.");
+        }
+      });
+      paymentCell.append(paymentSelect);
+      row.append(paymentCell);
     });
     const emptyRow=document.createElement("tr");
     emptyRow.dataset.companyStatusEmpty="";
     emptyRow.hidden=true;
-    emptyRow.innerHTML='<td colspan="7"><div class="empty">선택한 진행상태의 기업이 없습니다.</div></td>';
+    emptyRow.innerHTML='<td colspan="8"><div class="empty">선택한 진행상태의 기업이 없습니다.</div></td>';
     table.tBodies[0]?.append(emptyRow);
     applyCompanyStatusFilter(table);
   }
@@ -324,6 +361,7 @@
   new MutationObserver(syncAll).observe(root,{childList:true,subtree:true});
   window.addEventListener("storage",event=>{
     if(event.key===storageKey)syncCompanyDetailStatus();
+    if(event.key===paymentStorageKey&&root.querySelector(".company-payment-status"))render();
     if(event.key===companyTypeStorageKey)syncCompanyDetailStatus();
     if(event.key===adminMetaStorageKey)syncAdminCompanyDetails();
     if(event.key===companyNoteStorageKey)syncCompanyNote();

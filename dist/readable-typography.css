@@ -38,13 +38,17 @@
 .db-table:has(th[data-remaining-rounds]) .entity-link{font-size:12px!important}
 .db-table:has(th[data-remaining-rounds]) .entity-mark{width:36px;height:36px;font-size:11px!important}
 .db-table:has(th[data-remaining-rounds]) :where(.entity-cell small,.tag){font-size:10px!important}
-.db-table th[data-remaining-rounds],.company-remaining-rounds{text-align:center}
+.db-table:has(th[data-remaining-rounds]) table{min-width:1180px}
+.db-table th[data-remaining-rounds],.db-table th[data-company-payment-status],.company-remaining-rounds,.company-payment-status{width:112px;padding-left:8px!important;padding-right:8px!important;text-align:center;white-space:nowrap}
 .company-status-filter{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:5px;min-width:92px;color:#5f6c84;font-weight:800;cursor:pointer}.company-status-filter i{font-style:normal;font-size:8px;color:#3159f5}.company-status-filter select{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}.company-status-filter:focus-within{outline:2px solid #3159f5;outline-offset:3px;border-radius:4px}
 .company-remaining-rounds{color:#8b96aa;font-weight:700}
-.company-remaining-select{min-width:88px;height:34px;padding:0 28px 0 10px;border:1px solid #d7dfec;border-radius:9px;color:#56637b;background:#fff;font-size:11px;font-weight:800;cursor:pointer}
+.company-remaining-select,.company-payment-select{min-width:92px;height:34px;padding:0 26px 0 10px;border:1px solid #d7dfec;border-radius:9px;color:#56637b;background:#fff;font-size:11px;font-weight:800;cursor:pointer}
 .company-remaining-select[data-state="대기"]{color:#9a6b00;border-color:#f0d58f;background:#fff7df}
 .company-remaining-select[data-state="완료"]{color:#087b5d;border-color:#aee1cf;background:#e8f7f1}
 .company-remaining-select[data-state="진행중"]{color:#3159d9;border-color:#bccafa;background:#eef2ff}
+.company-payment-select[data-state="결제완료"]{color:#087b5d;border-color:#aee1cf;background:#e8f7f1}
+.company-payment-select[data-state="미결제"]{color:#c33e4e;border-color:#f0bcc3;background:#fff0f2}
+.company-payment-select[data-state="선잔금"]{color:#9a6b00;border-color:#f0d58f;background:#fff7df}
 .content .company-list-type-badge{display:table;width:max-content;margin-top:5px;padding:3px 7px;border-radius:999px;font-size:9px!important;font-weight:800;line-height:1}
 .content .company-list-type-badge.pocket{color:#3159d9;background:#e9efff}
 .content .company-list-type-badge.external{color:#7651bd;background:#f0eaff}
