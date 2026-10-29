@@ -3,6 +3,10 @@
   font-size:11px;
 }
 
+.investor-list-table table{
+  min-width:1280px;
+}
+
 .db-table:has(tbody [data-investor]) td{
   padding:15px 16px;
   font-size:12px;
@@ -28,4 +32,5 @@
 .db-table:has(tbody [data-investor]) .tag{
   font-size:10px;
 }
+
 

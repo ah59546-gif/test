@@ -5,6 +5,7 @@
   const markerDot=person=>person?.marker?`<span class="investor-status-dot ${person.marker}" aria-label="${person.marker==="red"?"빨간점":"노란점"} 표시"></span>`:"";
 
   db.investors.forEach(person=>{
+    person.fund=String(person.fund||"").trim();
     person.rounds=toList(person.rounds);
     person.focus=toList(person.focus);
     person.marker=["yellow","red"].includes(person.marker)?person.marker:"";
@@ -14,20 +15,21 @@
   renderInvestors=function(){
     const people=db.investors.filter(person=>{
       const aggregate=investorAgg(person);
-      return match(person.name,person.firm,person.operatorType,person.title,...person.rounds,...person.focus,...aggregate.ms.flatMap(meeting=>[meeting.company?.name,meeting.memo]));
+      return match(person.name,person.firm,person.fund,person.operatorType,person.title,...person.rounds,...person.focus,...aggregate.ms.flatMap(meeting=>[meeting.company?.name,meeting.memo]));
     });
     const rows=people.map(person=>{
       const aggregate=investorAgg(person);
       const operatorType=person.operatorType||operatorTypeForFirm(person.firm);
-      return `<tr><td><div class="entity-cell"><i class="entity-mark">${initials(person.name)}</i><div><div class="investor-name-line"><button class="entity-link" data-investor="${person.id}">${esc(person.name)}</button>${markerDot(person)}</div>${person.email?`<small>${esc(person.email)}</small>`:""}${person.phone?`<small>연락처 ${esc(person.phone)}</small>`:""}</div></div></td><td><div class="firm-with-type">${person.firm?`<span>${esc(person.firm)}</span>`:""}${operatorTypeBadges(operatorType)}</div></td><td>${esc(person.title)}</td><td><div class="investor-preference-tags">${tags(person.rounds)}</div></td><td><div class="investor-preference-tags">${tags(person.focus)}</div></td><td>${aggregate.followups}</td><td>${aggregate.done}</td></tr>`;
+      return `<tr><td><div class="entity-cell"><i class="entity-mark">${initials(person.name)}</i><div><div class="investor-name-line"><button class="entity-link" data-investor="${person.id}">${esc(person.name)}</button>${markerDot(person)}</div>${person.email?`<small>${esc(person.email)}</small>`:""}${person.phone?`<small>연락처 ${esc(person.phone)}</small>`:""}</div></div></td><td><div class="firm-with-type">${person.firm?`<span>${esc(person.firm)}</span>`:""}${operatorTypeBadges(operatorType)}</div></td><td>${esc(person.fund||"—")}</td><td>${esc(person.title)}</td><td><div class="investor-preference-tags">${tags(person.rounds)}</div></td><td><div class="investor-preference-tags">${tags(person.focus)}</div></td><td>${aggregate.followups}</td><td>${aggregate.done}</td></tr>`;
     }).join("");
-    return `<div class="list-header"><p>직접 등록한 심사역의 기본 정보와 연결된 이력을 관리합니다.</p><button class="primary-button" data-open-investor>＋ 심사역 추가</button></div><section class="panel db-table investor-list-table"><div class="table-wrap"><table><thead><tr><th>심사역</th><th>소속 투자사 · 운영사 종류</th><th>직책</th><th>관심 라운드</th><th>관심 분야</th><th>후속 미팅</th><th>투자 완료</th></tr></thead><tbody>${rows||`<tr><td colspan="7"><div class="empty investor-empty"><strong>등록된 심사역이 없습니다.</strong><span>심사역 추가 버튼을 눌러 직접 등록해 주세요.</span><button class="primary-button" data-open-investor>＋ 첫 심사역 추가</button></div></td></tr>`}</tbody></table></div></section>`;
+    return `<div class="list-header"><p>직접 등록한 심사역의 기본 정보와 연결된 이력을 관리합니다.</p><button class="primary-button" data-open-investor>＋ 심사역 추가</button></div><section class="panel db-table investor-list-table"><div class="table-wrap"><table><thead><tr><th>심사역</th><th>소속 투자사 · 운영사 종류</th><th>펀드</th><th>직책</th><th>관심 라운드</th><th>관심 분야</th><th>후속 미팅</th><th>투자 완료</th></tr></thead><tbody>${rows||`<tr><td colspan="8"><div class="empty investor-empty"><strong>등록된 심사역이 없습니다.</strong><span>심사역 추가 버튼을 눌러 직접 등록해 주세요.</span><button class="primary-button" data-open-investor>＋ 첫 심사역 추가</button></div></td></tr>`}</tbody></table></div></section>`;
   };
 
   const originalOpenInvestorModal=openInvestorModal;
   openInvestorModal=function(id=""){
     originalOpenInvestorModal(id);
     const person=id?inv(id):null;
+    document.getElementById("investorForm").elements.fund.value=person?.fund||"";
     document.getElementById("investorForm").elements.rounds.value=toList(person?.rounds).join(", ");
     document.getElementById("investorForm").elements.marker.value=person?.marker||"";
   };
@@ -41,7 +43,7 @@
       showToast("이미 등록된 이메일입니다.");
       return;
     }
-    const values={name:data.name.trim(),firm:data.firm.trim(),operatorType:data.operatorType,title:data.title.trim(),email,phone:data.phone.trim(),marker:["yellow","red"].includes(data.marker)?data.marker:"",rounds:toList(data.rounds),focus:toList(data.focus)};
+    const values={name:data.name.trim(),firm:data.firm.trim(),fund:data.fund.trim(),operatorType:data.operatorType,title:data.title.trim(),email,phone:data.phone.trim(),marker:["yellow","red"].includes(data.marker)?data.marker:"",rounds:toList(data.rounds),focus:toList(data.focus)};
     if(data.id){
       const person=inv(data.id);
       if(!person){showToast("수정할 심사역을 찾지 못했습니다.");return}
@@ -113,4 +115,5 @@
   enhanceInvestorDetail();
   render();
 })();
+
 
