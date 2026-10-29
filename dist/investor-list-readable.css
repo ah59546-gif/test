@@ -8,7 +8,7 @@
 }
 
 .investor-list-table table{
-  min-width:1380px;
+  min-width:1490px;
   table-layout:fixed;
 }
 
@@ -19,85 +19,34 @@
 .investor-list-table th:nth-child(1){width:220px;}
 .investor-list-table th:nth-child(2){width:270px;}
 .investor-list-table th:nth-child(3){width:120px;}
-.investor-list-table th:nth-child(4){width:160px;}
-.investor-list-table th:nth-child(5){width:210px;}
+.investor-list-table th:nth-child(4){width:210px;}
+.investor-list-table th:nth-child(5){width:230px;}
 .investor-list-table th:nth-child(6){width:180px;}
 .investor-list-table th:nth-child(7){width:110px;}
 .investor-list-table th:nth-child(8){width:110px;}
 
-.investor-filter-panel{
-  display:grid;
-  grid-template-columns:1fr;
-  gap:14px;
-  align-items:stretch;
-  margin:14px 0;
-  padding:14px 16px;
-  border:1px solid #dfe5f0;
-  border-radius:14px;
-  background:#fff;
-  box-shadow:0 8px 24px rgba(31,49,105,.04);
-}
-
-.investor-filter-grid{
-  display:grid;
-  grid-template-columns:repeat(4,minmax(140px,1fr));
-  gap:10px;
-}
-
-.investor-filter-grid label{
-  display:grid;
-  gap:6px;
-  min-width:0;
-}
-
-.investor-filter-grid label>span{
-  color:#65728b;
-  font-size:10px;
-  font-weight:800;
-}
-
-.investor-filter-grid select{
-  width:100%;
-  height:40px;
-  padding:0 34px 0 12px;
-  border:1px solid #d8e1f0;
-  border-radius:10px;
-  color:#24324f;
-  background:#f9fbff;
-  font-size:11px;
-  font-weight:700;
-  outline:0;
-}
-
-.investor-filter-grid select:focus{
-  border-color:#3159f5;
-  box-shadow:0 0 0 3px rgba(49,89,245,.1);
-}
-
-.investor-filter-meta{
+.investor-list-actions{
   display:flex;
   align-items:center;
-  justify-content:space-between;
   gap:10px;
-  min-height:40px;
   white-space:nowrap;
 }
 
-.investor-filter-meta span{
+.investor-list-actions>span{
   color:#7b879d;
   font-size:10px;
 }
 
-.investor-filter-meta strong{
+.investor-list-actions>span strong{
   color:#3159f5;
   font-size:13px;
 }
 
-.investor-filter-meta button{
-  height:40px;
-  padding:0 13px;
+.investor-list-actions>[data-investor-filter-reset]{
+  height:34px;
+  padding:0 11px;
   border:1px solid #cfd9ec;
-  border-radius:10px;
+  border-radius:9px;
   color:#52617d;
   background:#fff;
   font-size:10px;
@@ -105,15 +54,43 @@
   cursor:pointer;
 }
 
-.investor-filter-meta button:hover:not(:disabled){
+.investor-list-actions>[data-investor-filter-reset]:hover{
   border-color:#3159f5;
   color:#3159f5;
   background:#f4f7ff;
 }
 
-.investor-filter-meta button:disabled{
-  opacity:.45;
-  cursor:default;
+.investor-header-filter{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  min-width:0;
+}
+
+.investor-header-filter>span{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.investor-header-filter select{
+  flex:0 0 auto;
+  width:86px;
+  height:30px;
+  padding:0 27px 0 9px;
+  border:1px solid #d5deed;
+  border-radius:8px;
+  color:#34415c;
+  background:#fff;
+  font:inherit;
+  font-weight:800;
+  outline:0;
+}
+
+.investor-header-filter select:focus{
+  border-color:#3159f5;
+  box-shadow:0 0 0 3px rgba(49,89,245,.1);
 }
 
 .db-table:has(tbody [data-investor]) td{
@@ -142,14 +119,7 @@
   font-size:10px;
 }
 
-@media(max-width:1100px){
-  .investor-filter-grid{grid-template-columns:repeat(2,minmax(150px,1fr));}
-}
-
 @media(max-width:620px){
-  .investor-filter-grid{grid-template-columns:1fr;}
-  .investor-filter-meta{align-items:stretch;flex-direction:column;}
-  .investor-filter-meta button{width:100%;}
+  .investor-list-actions{flex-wrap:wrap;justify-content:flex-end;}
 }
-
 
