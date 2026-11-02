@@ -25,6 +25,8 @@
   let syncReady=false;
   const pendingKeys=new Set();
   const timers=new Map();
+  const pushTasks=new Map();
+  let resumeSyncTask=null;
 
   Storage.prototype.setItem=function(key,value){
     nativeSetItem.call(this,key,value);
@@ -136,26 +138,81 @@
     pendingKeys.add(key);
     if(!syncReady||!session)return;
     clearTimeout(timers.get(key));
-    timers.set(key,setTimeout(()=>pushKey(key),280));
+    timers.set(key,setTimeout(()=>{
+      timers.delete(key);
+      pushKey(key);
+    },280));
   }
 
-  async function pushKey(key){
-    if(!SHARED_KEYS.has(key)||!session)return;
-    const value=localStorage.getItem(key);
-    if(value===null)return;
-    try{
-      setStatus("saving","저장 중");
-      await rest(`${TABLE}?on_conflict=storage_key`,{
-        method:"POST",
-        headers:{Prefer:"resolution=merge-duplicates,return=minimal"},
-        body:JSON.stringify({storage_key:key,storage_value:value,updated_at:new Date().toISOString(),updated_by:session.user?.id||null})
-      });
-      pendingKeys.delete(key);
-      setStatus("ok","공용 데이터 연결됨");
-    }catch(error){
-      setStatus("error","저장 재시도 필요");
-      console.error("Pocket CRM shared sync push failed",error);
+  function pushKey(key){
+    if(!SHARED_KEYS.has(key)||!session)return Promise.resolve(false);
+    clearTimeout(timers.get(key));
+    timers.delete(key);
+
+    const activeTask=pushTasks.get(key);
+    if(activeTask){
+      return activeTask.then(()=>pendingKeys.has(key)?pushKey(key):true);
     }
+
+    const task=(async()=>{
+      const value=localStorage.getItem(key);
+      if(value===null){
+        pendingKeys.delete(key);
+        return false;
+      }
+      try{
+        setStatus("saving","저장 중");
+        await rest(`${TABLE}?on_conflict=storage_key`,{
+          method:"POST",
+          headers:{Prefer:"resolution=merge-duplicates,return=minimal"},
+          body:JSON.stringify({storage_key:key,storage_value:value,updated_at:new Date().toISOString(),updated_by:session.user?.id||null})
+        });
+        if(localStorage.getItem(key)===value)pendingKeys.delete(key);
+        else pendingKeys.add(key);
+        setStatus(pendingKeys.size?"saving":"ok",pendingKeys.size?"저장 중":"공용 데이터 연결됨");
+        return true;
+      }catch(error){
+        setStatus("error","저장 재시도 필요");
+        console.error("Pocket CRM shared sync push failed",error);
+        return false;
+      }finally{
+        if(pushTasks.get(key)===task)pushTasks.delete(key);
+      }
+    })();
+    pushTasks.set(key,task);
+    return task;
+  }
+
+  async function flushPendingWrites(){
+    if(!syncReady||!session)return true;
+    for(let pass=0;pass<3&&pendingKeys.size;pass+=1){
+      const keys=[...pendingKeys];
+      keys.forEach(key=>{
+        clearTimeout(timers.get(key));
+        timers.delete(key);
+      });
+      const results=await Promise.all(keys.map(pushKey));
+      if(results.every(result=>result===false))break;
+    }
+    return pendingKeys.size===0;
+  }
+
+  function syncAfterResume(){
+    if(!syncReady||!session)return Promise.resolve(false);
+    if(resumeSyncTask)return resumeSyncTask;
+    resumeSyncTask=(async()=>{
+      const saved=await flushPendingWrites();
+      if(!saved){
+        setStatus("error","저장 재시도 필요");
+        return false;
+      }
+      return pullRemote({reload:true});
+    })().catch(error=>{
+      setStatus("error","연결 확인 필요");
+      console.error("Pocket CRM shared sync resume failed",error);
+      return false;
+    }).finally(()=>{resumeSyncTask=null});
+    return resumeSyncTask;
   }
 
   async function fetchRows(){
@@ -184,7 +241,12 @@
     applyingRemote=true;
     try{
       rows.forEach(row=>{
-        if(SHARED_KEYS.has(row.storage_key)&&localStorage.getItem(row.storage_key)!==row.storage_value){
+        if(
+          SHARED_KEYS.has(row.storage_key)&&
+          !pendingKeys.has(row.storage_key)&&
+          !pushTasks.has(row.storage_key)&&
+          localStorage.getItem(row.storage_key)!==row.storage_value
+        ){
           nativeSetItem.call(localStorage,row.storage_key,row.storage_value);
           changed=true;
         }
@@ -255,10 +317,10 @@
     if(ready!==false)window.dispatchEvent(new CustomEvent("pocket-crm-shared-ready"));
 
     document.addEventListener("visibilitychange",()=>{
-      if(document.visibilityState==="visible"&&syncReady&&session)pullRemote({reload:true}).catch(()=>setStatus("error","연결 확인 필요"));
+      if(document.visibilityState==="visible")syncAfterResume();
     });
     window.addEventListener("focus",()=>{
-      if(syncReady&&session)pullRemote({reload:true}).catch(()=>setStatus("error","연결 확인 필요"));
+      syncAfterResume();
     });
     setInterval(()=>{
       if(session&&Number(session.expires_at||0)<=Math.floor(Date.now()/1000)+300)refreshSession();
@@ -268,3 +330,4 @@
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});
   else init();
 })();
+
