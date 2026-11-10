@@ -1,7 +1,10 @@
 .meeting-amount-cell{min-width:140px;white-space:normal}
-.meeting-amount-trigger{display:inline-flex;align-items:center;justify-content:space-between;gap:12px;min-width:110px;min-height:40px;padding:8px 10px;border:1px solid #e5e8eb;border-radius:10px;background:#fff;color:#191f28;font:inherit;cursor:pointer;white-space:nowrap}
-.meeting-amount-trigger:hover{border-color:#b2d4ff;background:#f5f9ff}
-.meeting-amount-trigger>small{color:#3182f6;font-size:12px!important}
+.meeting-amount-trigger{display:inline-flex;align-items:center;gap:8px;min-width:60px;min-height:40px;padding:8px 6px;border:0;border-radius:8px;background:transparent;color:#191f28;font:inherit;cursor:pointer;white-space:nowrap}
+.meeting-amount-trigger:hover{background:#f2f4f6}
+.meeting-amount-trigger:focus-visible{outline:2px solid #3182f6;outline-offset:2px}
+.meeting-amount-trigger>svg{width:14px;height:14px;flex:none;color:#8b95a1;opacity:0;transition:opacity .15s}
+.meeting-amount-trigger:hover>svg,.meeting-amount-trigger:focus-visible>svg{opacity:1}
+@media(hover:none){.meeting-amount-trigger>svg{opacity:.6}}
 .meeting-amount-form{display:grid;gap:8px;width:190px;max-width:100%;padding:4px 0}
 .meeting-amount-form>label{font-size:12px!important;font-weight:600;color:#6b7684}
 .meeting-amount-input{display:flex;align-items:center;gap:6px;min-height:44px;padding:0 10px;border:1px solid #d1d6db;border-radius:10px;background:#fff}
@@ -15,4 +18,11 @@
 .meeting-amount-actions button:disabled{opacity:.4;cursor:wait}
 .meeting-amount-error{margin:0;color:#d93643!important;white-space:normal;font-size:12px!important;line-height:1.5}
 .meeting-amount-error[hidden]{display:none}
+.meeting-amount-hint{margin:0;color:#6b7684!important;font-size:12px!important;line-height:1.5;white-space:normal}
+.content .badge.completed{color:#138451;background:#e5f8ef}
+.content select.status-select.investment-completed{color:#138451;background:#e5f8ef;border-color:#b5e8cd}
+.annual-summary-grid article:has(>[data-annual-kpi="completed"]){border-color:#c6ecda;background:#f5fcf8}
+.annual-summary-grid article:has(>[data-annual-kpi="completed"])>strong{color:#138451}
+.annual-summary-grid article:has(>[data-annual-kpi="completed"])>button{color:#138451;background:#e5f8ef}
+.annual-summary-grid article.active:has(>[data-annual-kpi="completed"]){border-color:#20a76a}
 
