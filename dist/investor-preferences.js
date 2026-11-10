@@ -111,6 +111,7 @@
       showToast("심사역 정보를 수정했습니다.");
       render();
     }else{
+      restoreDeletedInvestor(values.name,values.firm);
       db.investors.unshift({id:`inv-${Date.now()}`,...values});
       save();
       fillSelects();
@@ -170,4 +171,5 @@
   enhanceInvestorDetail();
   render();
 })();
+
 

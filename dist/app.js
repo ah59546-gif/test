@@ -14,8 +14,16 @@ const storageKey = "pocket-crm-relational-v2";
 const companyRemainingRoundStorageKey="pocket-crm-company-remaining-rounds-v1";
 const saved = JSON.parse(localStorage.getItem(storageKey) || "null");
 const db = saved || { investors:investorsSeed, companies:companiesSeed, meetings:meetingsSeed };
+const investorDeletionBackupKey="pocket-crm-investor-deletions-v1";
+let investorDeletionBackup={};
+try{investorDeletionBackup=JSON.parse(localStorage.getItem(investorDeletionBackupKey)||"{}")||{}}catch{}
+db.deletedInvestorIdentities=[...new Set([...(Array.isArray(db.deletedInvestorIdentities)?db.deletedInvestorIdentities:[]),...(Array.isArray(investorDeletionBackup.identities)?investorDeletionBackup.identities:[])])];
+db.deletedInvestorIds=[...new Set([...(Array.isArray(db.deletedInvestorIds)?db.deletedInvestorIds:[]),...(Array.isArray(investorDeletionBackup.ids)?investorDeletionBackup.ids:[])])];
+function persistInvestorDeletionBackup(){localStorage.setItem(investorDeletionBackupKey,JSON.stringify({identities:db.deletedInvestorIdentities,ids:db.deletedInvestorIds}))}
+function hasDeletedInvestorName(name){const key=normalizeInvestorPersonName(name);return db.deletedInvestorIdentities.some(identity=>String(identity).split("::")[0]===key)}
+if(db.deletedInvestorIdentities.length||db.deletedInvestorIds.length)persistInvestorDeletionBackup();
 const existingInvestorNames=new Set(db.investors.map(person=>String(person.name||"").trim()).filter(Boolean));
-sheetInvestorNames20260630.forEach((name,index)=>{if(existingInvestorNames.has(name))return;db.investors.push({id:`inv-sheet-20260630-${index+1}`,name,firm:"",fund:"",operatorType:"",title:"",email:"",phone:"",focus:[]});existingInvestorNames.add(name)});
+if(!saved)sheetInvestorNames20260630.forEach((name,index)=>{if(existingInvestorNames.has(name)||hasDeletedInvestorName(name))return;db.investors.push({id:`inv-sheet-20260630-${index+1}`,name,firm:"",fund:"",operatorType:"",title:"",email:"",phone:"",focus:[]});existingInvestorNames.add(name)});
 const sheetCompanyEvents20260630=(window.pocketdayArchiveSeed||[]).filter(event=>event.date>="2026-04-14"&&event.date<="2026-06-30");
 const sheetCompanyRecordMap=new Map();
 sheetCompanyEvents20260630.forEach(event=>(event.companies||[]).forEach(rawName=>{const name=cleanImportedCompanyName(rawName);if(!name||name==="순천향대학교")return;const key=normalizeCompanyName(name);if(!sheetCompanyRecordMap.has(key))sheetCompanyRecordMap.set(key,{name,pocketdayIds:[]});const record=sheetCompanyRecordMap.get(key);if(!record.pocketdayIds.includes(event.id))record.pocketdayIds.push(event.id)}));
@@ -25,7 +33,6 @@ const investorInterestStorageKey="pocket-crm-investor-interest-companies-v1";
 let investorInterestCompanyIds=new Set(JSON.parse(localStorage.getItem(investorInterestStorageKey)||"[]"));
 function saveInvestorInterestCompanies(){localStorage.setItem(investorInterestStorageKey,JSON.stringify([...investorInterestCompanyIds]))}
 db.connectionResearch = db.connectionResearch || {};
-db.deletedInvestorIdentities = db.deletedInvestorIdentities || [];
 db.dataMigrations=db.dataMigrations||{};
 const legacyInvestorFundCleanupKey="legacyInvestorFundDescriptionCleanup20261105V1";
 if(!db.dataMigrations[legacyInvestorFundCleanupKey]){
@@ -62,7 +69,7 @@ const houseOperatorTypes = houseOperatorTypeMap();
 function operatorTypeForFirm(firm=""){let key=normalizeFirmName(firm);if(!key)return "";const alias=investorFirmAliases[key];if(alias)key=normalizeFirmName(alias);let types=houseOperatorTypes.get(key);if(!types&&key.length>=4){const candidate=[...houseOperatorTypes.entries()].filter(([houseKey])=>houseKey.includes(key)||key.includes(houseKey)).sort((a,b)=>b[0].length-a[0].length)[0];types=candidate?.[1]}if(!types)return "";return [...types].sort((a,b)=>{const ai=operatorTypeOrder.indexOf(a);const bi=operatorTypeOrder.indexOf(b);return (ai<0?99:ai)-(bi<0?99:bi)}).join(", ")}
 function operatorTypeBadges(value=""){const values=String(value).split(/[,/]/).map(item=>item.trim()).filter(Boolean);return values.map(item=>`<em class="operator-type type-${esc(item)}">${esc(item)}</em>`).join("")}
 const investorArchiveImportKey = "pocket-crm-investor-archive-p085-p098-v1";
-if(!localStorage.getItem(investorArchiveImportKey)){const existingNames=new Set(db.investors.map(person=>person.name));importedInvestorNames.forEach((name,index)=>{if(!existingNames.has(name))db.investors.push({id:`inv-archive-${index+1}`,name,firm:"",fund:"",operatorType:"",title:"",email:"",phone:"",focus:[]})});localStorage.setItem(storageKey,JSON.stringify(db));localStorage.setItem(investorArchiveImportKey,"1")}
+if(!localStorage.getItem(investorArchiveImportKey)){const existingNames=new Set(db.investors.map(person=>person.name));importedInvestorNames.forEach((name,index)=>{if(!saved&&!existingNames.has(name)&&!hasDeletedInvestorName(name))db.investors.push({id:`inv-archive-${index+1}`,name,firm:"",fund:"",operatorType:"",title:"",email:"",phone:"",focus:[]})});localStorage.setItem(storageKey,JSON.stringify(db));localStorage.setItem(investorArchiveImportKey,"1")}
 const investorOperatorTypeSyncKey = "pocket-crm-investor-operator-types-v1";
 if(!localStorage.getItem(investorOperatorTypeSyncKey)){let changed=false;db.investors.forEach(person=>{if(!person.operatorType&&person.firm){const matchedType=operatorTypeForFirm(person.firm);if(matchedType){person.operatorType=matchedType;changed=true}}});if(changed)localStorage.setItem(storageKey,JSON.stringify(db));localStorage.setItem(investorOperatorTypeSyncKey,"1")}
 const investorOperatorTypeFirmSyncKey="investorOperatorTypeFromFirm20261106V2";
@@ -93,6 +100,29 @@ function canonicalInvestorFirmKey(value=""){
 function pocketdayInvestorIdentity(name="",firm=""){
   return `${normalizeInvestorPersonName(name)}::${canonicalInvestorFirmKey(firm)}`;
 }
+function isDeletedInvestor(person){
+  if(db.deletedInvestorIds.includes(person.id))return true;
+  if(db.deletedInvestorIdentities.includes(pocketdayInvestorIdentity(person.name,person.firm)))return true;
+  return !canonicalInvestorFirmKey(person.firm)&&/^inv-(archive-|sheet-20260630-)/.test(person.id||"")&&hasDeletedInvestorName(person.name);
+}
+function pruneDeletedInvestors(){
+  const count=db.investors.length;
+  db.investors=db.investors.filter(person=>!isDeletedInvestor(person));
+  if(db.investors.length===count)return false;
+  localStorage.setItem(storageKey,JSON.stringify(db));
+  return true;
+}
+function rememberInvestorDeletion(person){
+  db.deletedInvestorIdentities=[...new Set([...db.deletedInvestorIdentities,pocketdayInvestorIdentity(person.name,person.firm)])];
+  db.deletedInvestorIds=[...new Set([...db.deletedInvestorIds,person.id])];
+  persistInvestorDeletionBackup();
+}
+function restoreDeletedInvestor(name,firm){
+  const nameKey=normalizeInvestorPersonName(name),firmKey=canonicalInvestorFirmKey(firm);
+  db.deletedInvestorIdentities=db.deletedInvestorIdentities.filter(identity=>{const [deletedName,deletedFirm]=String(identity).split("::");return deletedName!==nameKey||Boolean(firmKey&&deletedFirm&&deletedFirm!==firmKey)});
+  persistInvestorDeletionBackup();
+}
+pruneDeletedInvestors();
 function stablePocketdayInvestorId(name="",firm=""){
   const source=pocketdayInvestorIdentity(name,firm);
   let hash=2166136261;
@@ -119,7 +149,7 @@ function syncInvestorFirmsFromPocketday(){
       const identity=pocketdayInvestorIdentity(name,details.firm);
       if(seen.has(identity))return;
       seen.add(identity);
-      if(db.deletedInvestorIdentities.includes(identity))return;
+      if(isDeletedInvestor({id:stablePocketdayInvestorId(name,details.firm),name,firm:details.firm})||(!details.firm&&hasDeletedInvestorName(name)))return;
       let person=findPocketdayInvestor(name,details.firm);
       if(!person){
         const id=stablePocketdayInvestorId(name,details.firm);
@@ -141,8 +171,9 @@ function syncInvestorFirmsFromPocketday(){
   return changed;
 }
 window.addEventListener("pocket-crm-shared-ready",()=>{
+  const deletedRemoved=pruneDeletedInvestors();
   const scheduleChanged=syncInvestorFirmsFromPocketday();
-  if(scheduleChanged)render();
+  if(deletedRemoved||scheduleChanged)render();
 },{once:true});
 const pocketdayRoundResetKey="pocket-crm-pocketday-rounds-from-20260106-v1";
 if(!localStorage.getItem(pocketdayRoundResetKey)){
@@ -522,8 +553,7 @@ async function deleteInvestor(id){
   const details=[meetingCount?`미팅 ${meetingCount}건`:"",researchCount?`후속 현황 ${researchCount}건`:"",paymentCount?`심사비 ${paymentCount}건`:""].filter(Boolean).join(", ");
   const scheduleNotice=scheduleEvents.size?`\n포켓데이 일정 ${scheduleEvents.size}회의 원본 명단은 유지되며, 심사역 목록 자동 추가만 차단됩니다.`:"";
   if(!window.confirm(`${person.name} 심사역을 삭제할까요?${details?`\n연결된 ${details}도 함께 삭제됩니다.`:""}${scheduleNotice}\n삭제 후에는 되돌릴 수 없습니다.`))return;
-  const removedIdentities=new Set([pocketdayInvestorIdentity(person.name,person.firm)]);
-  db.deletedInvestorIdentities=[...new Set([...(db.deletedInvestorIdentities||[]),...removedIdentities])];
+  rememberInvestorDeletion(person);
   db.investors=db.investors.filter(item=>item.id!==id);
   db.meetings=db.meetings.filter(item=>item.investorId!==id);
   db.connectionResearch=Object.fromEntries(Object.entries(db.connectionResearch||{}).filter(([,record])=>record?.investorId!==id));
@@ -760,4 +790,5 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")closePocketdayModal(
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeResearchModal()});
 document.getElementById("researchForm").onsubmit=e=>{e.preventDefault();const form=e.currentTarget;const x=Object.fromEntries(new FormData(form).entries());const key=researchKey(x.investorId,x.companyId,x.companyName);const current=researchRecord(x.investorId,x.companyId,x.companyName);const record={investorId:x.investorId,companyId:x.companyId,companyName:x.companyName,followupStatus:x.followupStatus,investmentStatus:x.investmentStatus,checkedAt:current.checkedAt,source:current.source,memo:x.memo.trim(),updatedAt:today()};syncResearchToMeeting(record);const syncedKey=researchKey(record.investorId,record.companyId,record.companyName);if(syncedKey!==key)delete db.connectionResearch[key];db.connectionResearch[syncedKey]=record;save();fillSelects();form.reset();closeResearchModal();showToast("기업 후속 현황을 저장하고 미팅 이력에 반영했습니다.");render()};
 document.getElementById("pocketdayForm").onsubmit=e=>{e.preventDefault();const form=e.currentTarget;const x=Object.fromEntries(new FormData(form).entries());const eventId=x.eventId||`manual-${Date.now()}`;const values={id:eventId,round:x.round?Number(x.round):null,date:x.date.trim(),operationType:x.operationType,status:x.status,companies:x.companies.split(/[,\n]/).map(value=>value.trim()).filter(Boolean),investors:x.investors.split(/\n/).map(value=>value.trim()).filter(Boolean)};if(x.eventId){const index=pocketdaySchedule.findIndex(event=>event.id===x.eventId);if(index<0){showToast("수정할 일정을 찾지 못했습니다.");return}pocketdaySchedule[index]=values}else{pocketdaySchedule.push(values)}pocketdaySchedule.sort((a,b)=>b.date.localeCompare(a.date));pocketdayYear=Number(values.date.match(/\d{4}/)?.[0])||pocketdayYear;savePocketdaySchedule();syncInvestorFirmsFromPocketday();form.reset();closePocketdayModal();showToast(x.eventId?"포켓데이 일정을 수정했습니다.":"포켓데이 일정을 추가했습니다.");render()};
+
 
