@@ -197,6 +197,14 @@
     return pendingKeys.size===0;
   }
 
+  window.pocketCrmSharedSync={
+    flush:async()=>{
+      const saved=await flushPendingWrites();
+      if(!saved)throw new Error("공용 데이터 저장에 실패했습니다.");
+      return true;
+    }
+  };
+
   function syncAfterResume(){
     if(!syncReady||!session)return Promise.resolve(false);
     if(resumeSyncTask)return resumeSyncTask;
@@ -330,4 +338,3 @@
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});
   else init();
 })();
-

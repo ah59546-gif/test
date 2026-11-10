@@ -25,10 +25,18 @@ const investorInterestStorageKey="pocket-crm-investor-interest-companies-v1";
 let investorInterestCompanyIds=new Set(JSON.parse(localStorage.getItem(investorInterestStorageKey)||"[]"));
 function saveInvestorInterestCompanies(){localStorage.setItem(investorInterestStorageKey,JSON.stringify([...investorInterestCompanyIds]))}
 db.connectionResearch = db.connectionResearch || {};
+db.deletedInvestorIdentities = db.deletedInvestorIdentities || [];
 db.dataMigrations=db.dataMigrations||{};
-if(!db.dataMigrations.researchInvestmentStatusUnconfirmedV1){
-  Object.values(db.connectionResearch).forEach(record=>{record.investmentStatus="미확인"});
-  db.dataMigrations.researchInvestmentStatusUnconfirmedV1=new Date().toISOString();
+const legacyInvestorFundCleanupKey="legacyInvestorFundDescriptionCleanup20261105V1";
+if(!db.dataMigrations[legacyInvestorFundCleanupKey]){
+  let clearedFunds=0;
+  db.investors.forEach(person=>{
+    if(String(person.fund||"").includes("현재 투자기간 내 운영중인 펀드 현황")){
+      person.fund="";
+      clearedFunds+=1;
+    }
+  });
+  db.dataMigrations[legacyInvestorFundCleanupKey]={syncedAt:new Date().toISOString(),clearedFunds};
   localStorage.setItem(storageKey,JSON.stringify(db));
 }
 const operatorTypeOrder = ["팁스","립스","특화","스케일업"];
@@ -57,6 +65,16 @@ const investorArchiveImportKey = "pocket-crm-investor-archive-p085-p098-v1";
 if(!localStorage.getItem(investorArchiveImportKey)){const existingNames=new Set(db.investors.map(person=>person.name));importedInvestorNames.forEach((name,index)=>{if(!existingNames.has(name))db.investors.push({id:`inv-archive-${index+1}`,name,firm:"",fund:"",operatorType:"",title:"",email:"",phone:"",focus:[]})});localStorage.setItem(storageKey,JSON.stringify(db));localStorage.setItem(investorArchiveImportKey,"1")}
 const investorOperatorTypeSyncKey = "pocket-crm-investor-operator-types-v1";
 if(!localStorage.getItem(investorOperatorTypeSyncKey)){let changed=false;db.investors.forEach(person=>{if(!person.operatorType&&person.firm){const matchedType=operatorTypeForFirm(person.firm);if(matchedType){person.operatorType=matchedType;changed=true}}});if(changed)localStorage.setItem(storageKey,JSON.stringify(db));localStorage.setItem(investorOperatorTypeSyncKey,"1")}
+const investorOperatorTypeFirmSyncKey="investorOperatorTypeFromFirm20261106V2";
+if(!db.dataMigrations[investorOperatorTypeFirmSyncKey]){
+  let updated=0;
+  db.investors.forEach(person=>{
+    const operatorType=operatorTypeForFirm(person.firm);
+    if(String(person.operatorType||"")!==operatorType){person.operatorType=operatorType;updated+=1}
+  });
+  db.dataMigrations[investorOperatorTypeFirmSyncKey]={syncedAt:new Date().toISOString(),updated};
+  localStorage.setItem(storageKey,JSON.stringify(db));
+}
 const companyDataClearKey = "pocket-crm-company-data-cleared-v1";
 if(!localStorage.getItem(companyDataClearKey)){db.archivedCompanyData={clearedAt:new Date().toISOString(),companies:[...db.companies],meetings:[...db.meetings]};db.companies=[];db.meetings=[];localStorage.setItem(storageKey,JSON.stringify(db));localStorage.setItem(companyDataClearKey,"1")}
 const companyArchiveImportKey="pocket-crm-company-archive-p085-plus-v1";
@@ -65,39 +83,67 @@ const statusOrder = ["검토 전","검토 중","투자 확정","투자 완료","
 const pocketdayScheduleSeed = window.pocketdayArchiveSeed||[];
 const pocketdayScheduleKey = "pocket-crm-pocketday-schedule-v4";
 let pocketdaySchedule = JSON.parse(localStorage.getItem(pocketdayScheduleKey)||"null")||pocketdayScheduleSeed.map(event=>({...event,companies:[...event.companies],investors:[...(event.investors||[])]}));
-const sheetScheduleSeed=pocketdayScheduleSeed.filter(event=>event.date>="2026-04-14"&&event.date<="2026-06-30");
-sheetScheduleSeed.forEach(seed=>{const existing=pocketdaySchedule.find(event=>event.date===seed.date);if(!existing){pocketdaySchedule.push({...seed,companies:[...seed.companies],investors:[...(seed.investors||[])]});return}existing.companies=[...new Set([...(existing.companies||[]),...seed.companies])];existing.investors=[...(seed.investors||[])];existing.status=existing.status||seed.status;existing.round=existing.round||seed.round});
 pocketdaySchedule.sort((a,b)=>b.date.localeCompare(a.date));
 function savePocketdaySchedule(){localStorage.setItem(pocketdayScheduleKey,JSON.stringify(pocketdaySchedule))}
 function normalizeInvestorPersonName(value=""){return String(value).toLowerCase().replace(/\s+/g,"").replace(/[^0-9a-z가-힣]/g,"")}
-function pocketdayInvestorFirmMap(){
-  const latestByName=new Map();
-  [...pocketdaySchedule].sort((a,b)=>b.date.localeCompare(a.date)).forEach(event=>{
-    (event.investors||[]).forEach(value=>{
-      const investor=pocketdayInvestorDetails(value);
-      const key=normalizeInvestorPersonName(investor.name);
-      if(key&&investor.firm&&!latestByName.has(key))latestByName.set(key,investor.firm);
-    });
-  });
-  return latestByName;
+function canonicalInvestorFirmKey(value=""){
+  const key=normalizeFirmName(value);
+  return key?normalizeFirmName(investorFirmAliases[key]||key):"";
+}
+function pocketdayInvestorIdentity(name="",firm=""){
+  return `${normalizeInvestorPersonName(name)}::${canonicalInvestorFirmKey(firm)}`;
+}
+function stablePocketdayInvestorId(name="",firm=""){
+  const source=pocketdayInvestorIdentity(name,firm);
+  let hash=2166136261;
+  for(let index=0;index<source.length;index+=1){hash^=source.charCodeAt(index);hash=Math.imul(hash,16777619)}
+  return `inv-pocketday-${(hash>>>0).toString(36)}`;
+}
+function findPocketdayInvestor(name="",firm=""){
+  const nameKey=normalizeInvestorPersonName(name);
+  const firmKey=canonicalInvestorFirmKey(firm);
+  const sameName=db.investors.filter(person=>normalizeInvestorPersonName(person.name)===nameKey);
+  if(!firmKey)return sameName[0]||null;
+  return sameName.find(person=>canonicalInvestorFirmKey(person.firm)===firmKey)
+    ||sameName.find(person=>!canonicalInvestorFirmKey(person.firm))
+    ||null;
 }
 function syncInvestorFirmsFromPocketday(){
-  const firmsByInvestor=pocketdayInvestorFirmMap();
   let changed=false;
-  db.investors.forEach(person=>{
-    if(!String(person.firm||"").trim()){
-      const matchedFirm=firmsByInvestor.get(normalizeInvestorPersonName(person.name))||"";
-      if(matchedFirm){person.firm=matchedFirm;changed=true}
-    }
-    if(!String(person.operatorType||"").trim()&&person.firm){
-      const matchedType=operatorTypeForFirm(person.firm);
-      if(matchedType){person.operatorType=matchedType;changed=true}
-    }
+  const seen=new Set();
+  [...pocketdaySchedule].sort((a,b)=>b.date.localeCompare(a.date)).forEach(event=>{
+    (event.investors||[]).forEach(value=>{
+      const details=pocketdayInvestorDetails(value);
+      const name=String(details.name||"").trim();
+      if(!name)return;
+      const identity=pocketdayInvestorIdentity(name,details.firm);
+      if(seen.has(identity))return;
+      seen.add(identity);
+      if(db.deletedInvestorIdentities.includes(identity))return;
+      let person=findPocketdayInvestor(name,details.firm);
+      if(!person){
+        const id=stablePocketdayInvestorId(name,details.firm);
+        person=db.investors.find(candidate=>candidate.id===id);
+        if(!person){
+          person={id,name,firm:details.firm||"",fund:"",operatorType:"",title:"",email:"",phone:"",memo:"",marker:"",rounds:[],focus:[]};
+          db.investors.push(person);
+          changed=true;
+        }
+      }
+      if(details.firm&&!String(person.firm||"").trim()){person.firm=details.firm;changed=true}
+      if(!String(person.operatorType||"").trim()&&person.firm){
+        const matchedType=operatorTypeForFirm(person.firm);
+        if(matchedType){person.operatorType=matchedType;changed=true}
+      }
+    });
   });
   if(changed)localStorage.setItem(storageKey,JSON.stringify(db));
   return changed;
 }
-window.addEventListener("pocket-crm-shared-ready",()=>{if(syncInvestorFirmsFromPocketday())render()},{once:true});
+window.addEventListener("pocket-crm-shared-ready",()=>{
+  const scheduleChanged=syncInvestorFirmsFromPocketday();
+  if(scheduleChanged)render();
+},{once:true});
 const pocketdayRoundResetKey="pocket-crm-pocketday-rounds-from-20260106-v1";
 if(!localStorage.getItem(pocketdayRoundResetKey)){
   [...pocketdaySchedule].sort((a,b)=>a.date.localeCompare(b.date)).forEach((event,index)=>{event.round=index+1});
@@ -129,13 +175,25 @@ const viewMeta = {
   pipeline:["LINKED VIEW","투자 파이프라인","같은 미팅 이력을 투자 단계별 보드로 확인합니다."],
   annualLinkage:["ANNUAL REPORT","투자연계현황","연도별 기업·심사역 연결과 후속 미팅, 투자 성과를 한눈에 확인합니다."]
 };
-let currentRole=""; let currentView="dashboard"; let query=""; let pocketViewMode="event"; let pocketdayYear=null; let selectedInvestorCompanyId="com-1"; let selectedCompanyId="com-1"; let selectedInvestorId="inv-1"; let annualYear=2026;
+let currentRole=""; let currentView="dashboard"; let query=""; let pocketViewMode="event"; let pocketdayYear=null; let selectedInvestorCompanyId="com-1"; let selectedCompanyId="com-1"; let selectedInvestorId="inv-1"; let annualYear=2026; let annualLinkageFilter="all";
 let restoringRoute=false;
 const roleDefaultViews={admin:"adminHome",company:"companyHome",investor:"investorHome"};
 const roleViews={admin:new Set(["adminHome","dashboard","meetings","investors","companies","companiesInProgress","companiesCompleted","houses","pocketdaySchedule","followups","pipeline","annualLinkage","investorDetail","companyDetail"]),company:new Set(["companyHome"]),investor:new Set(["investorHome","investorReview","investorFeedback","investorMeetings"])};
 const root=document.getElementById("viewRoot");
+root.addEventListener("click",event=>{
+  const trigger=event.target.closest("[data-annual-kpi]");
+  if(!trigger)return;
+  annualLinkageFilter=trigger.dataset.annualKpi||"all";
+  render();
+  requestAnimationFrame(()=>document.querySelector(".annual-linkage-table")?.scrollIntoView({behavior:"smooth",block:"start"}));
+});
 
 function save(){localStorage.setItem(storageKey,JSON.stringify(db))}
+async function saveAndSync(){
+  save();
+  await (window.pocketCrmSharedSync?.flush?.()||Promise.resolve(true));
+  return true;
+}
 function companyRemainingRoundMap(){try{return JSON.parse(localStorage.getItem(companyRemainingRoundStorageKey)||"{}")}catch{return {}}}
 function inv(id){return db.investors.find(x=>x.id===id)}
 function com(id){return db.companies.find(x=>x.id===id)}
@@ -157,7 +215,7 @@ function adminNav(){return `<button class="nav-item" data-view="adminHome"><i>�
 function companyNav(){return `<button class="nav-item active" data-view="companyHome"><i>⌂</i><span>기업 홈</span></button><p class="nav-label">MY ACTIVITY</p><button class="nav-item" data-scroll-target="company-history"><i>▣</i><span>참여 이력</span></button><button class="nav-item" data-scroll-target="company-calendar"><i>□</i><span>미팅 일정</span></button><button class="nav-item" data-scroll-target="company-status"><i>↗</i><span>투자 현황</span></button>`}
 function investorNav(){return `<button class="nav-item active" data-view="investorHome"><i>▣</i><span>포켓데이</span></button><button class="nav-item" data-view="investorReview"><i>▦</i><span>심사 관리</span></button><button class="nav-item" data-view="investorFeedback"><i>✎</i><span>심사평</span></button><button class="nav-item" data-view="investorMeetings"><i>◎</i><span>미팅 관리</span></button>`}
 function bindSideNav(){document.querySelectorAll("#sideNav [data-view]").forEach(b=>b.onclick=()=>switchView(b.dataset.view));document.querySelectorAll("#sideNav [data-scroll-target]").forEach(b=>b.onclick=()=>document.getElementById(b.dataset.scrollTarget)?.scrollIntoView({behavior:"smooth",block:"start"}))}
-function renderAdminSidebarStats(){const note=document.getElementById("sourceNote");if(!note)return;const total=db.meetings.length;const matched=db.meetings.filter(m=>["예정","진행 중","완료"].includes(m.followupStatus)).length;const matchedRate=total?Math.round(matched/total*100):0;const invested=db.meetings.filter(m=>m.investmentStatus==="투자 완료").length;note.className="source-note admin-stats";note.innerHTML=`<div class="admin-stats-head"><span class="dot"></span><div><strong>CRM 통계</strong><p>미팅 이력 DB 실시간 집계</p></div></div><div class="admin-stats-grid"><article><strong>${matchedRate}<em>%</em></strong><span>후속 미팅 매칭</span><small>${matched}/${total}건 연결</small></article><article><strong>${invested}<em>건</em></strong><span>투자 완료</span><small>누적 완료 건수</small></article></div><div class="admin-match-progress" aria-label="후속 미팅 매칭률 ${matchedRate}%"><i style="width:${matchedRate}%"></i></div>`}
+function renderAdminSidebarStats(){const note=document.getElementById("sourceNote");if(!note)return;const items=annualLinkageItems(annualYear);const total=items.length;const matched=items.filter(m=>["예정","진행 중","완료"].includes(m.followupStatus)).length;const matchedRate=total?Math.round(matched/total*100):0;const invested=items.filter(m=>m.investmentStatus==="투자 완료").length;note.className="source-note admin-stats";note.innerHTML=`<div class="admin-stats-head"><span class="dot"></span><div><strong>CRM 통계</strong><p>미팅·후속 현황 실시간 집계</p></div></div><div class="admin-stats-grid"><article><strong>${matchedRate}<em>%</em></strong><span>후속 미팅 매칭</span><small>${matched}/${total}건 연결</small></article><article><strong>${invested}<em>건</em></strong><span>투자 완료</span><small>누적 완료 건수</small></article></div><div class="admin-match-progress" aria-label="후속 미팅 매칭률 ${matchedRate}%"><i style="width:${matchedRate}%"></i></div>`}
 function setRoleChrome(role){const nav=document.getElementById("sideNav");const note=document.getElementById("sourceNote");const subtitle=document.getElementById("brandSubtitle");const profile={avatar:document.getElementById("profileAvatar"),name:document.getElementById("profileName"),role:document.getElementById("profileRole")};document.body.dataset.role=role;document.getElementById("searchBox").hidden=role!=="admin";document.getElementById("topActions").hidden=role!=="admin";document.getElementById("updatedChip").hidden=role!=="admin";if(role==="admin"){subtitle.textContent="Investor CRM";nav.innerHTML=adminNav();renderAdminSidebarStats();profile.avatar.textContent="PO";profile.name.textContent="포켓컴퍼니";profile.role.textContent="CRM 관리자"}else if(role==="company"){subtitle.textContent="Company Portal";nav.innerHTML=companyNav();note.className="source-note";note.innerHTML=`<span class="dot"></span><div><strong>기업 전용 공간</strong><p>우리 기업과 연결된 일정만 보여줍니다.</p></div>`;profile.avatar.textContent="플로";profile.name.textContent="플로우랩";profile.role.textContent="기업 계정"}else{subtitle.textContent="Investor Portal";nav.innerHTML=investorNav();note.className="source-note";note.innerHTML=`<span class="dot"></span><div><strong>심사역 전용 공간</strong><p>담당 기업과 투자 검토를 모아봅니다.</p></div>`;profile.avatar.textContent="김민";profile.name.textContent="김민준";profile.role.textContent="수석 심사역"}bindSideNav()}
 function routeEntityId(){return currentView==="investorDetail"?selectedInvestorId:currentView==="companyDetail"?selectedCompanyId:currentView==="investorMeetings"?selectedInvestorCompanyId:""}
 function syncRoute(){if(restoringRoute||!currentRole)return;const entityId=routeEntityId();const hash=`#/${encodeURIComponent(currentRole)}/${encodeURIComponent(currentView)}${entityId?`/${encodeURIComponent(entityId)}`:""}`;if(location.hash!==hash)history.pushState(null,"",hash)}
@@ -237,14 +295,91 @@ function meetingRows(data,editable=false){if(!data.length)return `<tr><td colspa
 function meetingTable(data,title="미팅 이력",editable=false){const headers=editable?["포켓데이 날짜","기업","심사역","투자사","후속 상태","투자 상태","투자금액","지급"]:["기업","심사역","미팅일","구분","투자 상태","후속 상태","후속 예정일","투자금액","최근 업데이트"];return `<section class="panel table-panel"><div class="table-toolbar"><div><strong>${title}</strong><span>${data.length}개 기록</span></div>${currentView==='dashboard'?`<button class="text-button" data-go="meetings">전체 보기 →</button>`:""}</div><div class="table-wrap"><table><thead><tr>${headers.map(header=>`<th>${header}</th>`).join("")}</tr></thead><tbody>${meetingRows(data,editable)}</tbody></table></div></section>`}
 
 function renderDashboard(data){const reviewing=data.filter(m=>["검토 전","검토 중","투자 확정"].includes(m.investmentStatus)).length;const follow=data.filter(m=>["예정","진행 중"].includes(m.followupStatus)).length;const done=data.filter(m=>m.investmentStatus==="투자 완료");return `<div class="stats-grid">${stat("전체 미팅 이력",data.length,"심사역 × 기업 관계 기준","▦","#dfeee5")}${stat("투자 검토 중",reviewing,"검토 전·검토 중·투자 확정","◔","#e7eef6")}${stat("후속 미팅 예정",follow,"미팅 이력에서 자동 집계","↗","#fff0cf")}${stat("투자 완료",done.length,`${fmtMoney(done.reduce((a,b)=>a+b.amount,0))} 누적`,"✓","#dff28a")}</div><div class="overview-grid"><section class="panel"><div class="panel-head"><div><h2>투자 파이프라인</h2><p>미팅 이력 DB의 투자 진행 상태별 보기</p></div><button class="text-button" data-go="pipeline">전체 보기 →</button></div>${renderPipeline(data)}</section><section class="panel"><div class="panel-head"><div><h2>다가오는 후속 미팅</h2><p>미팅 이력 DB의 후속 일정 보기</p></div><button class="text-button" data-go="followups">전체 보기 →</button></div>${renderAgenda(data)}</section></div>${meetingTable(data.slice(0,5),"최근 미팅 이력")}`}
-function renderMeetings(data){return `<div class="list-header"><p>이 DB의 한 행이 기업과 심사역의 한 번의 미팅 관계입니다.</p><button class="primary-button" data-open-meeting>＋ 기록 추가</button></div>${meetingTable(data,"미팅 이력 데이터베이스",true)}`}
+function renderMeetings(data){const followupMeetings=data.filter(meeting=>["예정","진행 중","완료"].includes(meeting.followupStatus));return `<div class="list-header"><p>후속 상태가 예정·진행 중·완료인 기록만 표시합니다. 통계는 전체 미팅 데이터를 기준으로 유지됩니다.</p><button class="primary-button" data-open-meeting>＋ 기록 추가</button></div>${meetingTable(followupMeetings,"후속 미팅 이력",true)}`}
 
 function investorAgg(person){const ms=db.meetings.filter(m=>m.investorId===person.id).map(joined).filter(m=>m.company);return {ms,companies:new Set(ms.map(m=>m.companyId)).size,review:ms.filter(m=>["검토 전","검토 중","투자 확정"].includes(m.investmentStatus)).length,followups:ms.filter(m=>["예정","진행 중"].includes(m.followupStatus)).length,done:ms.filter(m=>m.investmentStatus==="투자 완료").length,latest:ms.map(m=>m.date).sort().at(-1)||""}}
 function renderInvestors(){const people=db.investors.filter(p=>{const a=investorAgg(p);return match(p.name,p.firm,p.operatorType,p.title,p.focus.join(" "),...a.ms.flatMap(m=>[m.company?.name,m.memo]))});return `<div class="list-header"><p>직접 등록한 심사역의 기본 정보와 연결된 이력을 관리합니다.</p><button class="primary-button" data-open-investor>＋ 심사역 추가</button></div><section class="panel db-table"><div class="table-wrap"><table><thead><tr><th>심사역</th><th>소속 투자사 · 운영사 종류</th><th>직책</th><th>관심 분야</th><th>후속 미팅</th><th>투자 완료</th></tr></thead><tbody>${people.map(p=>{const a=investorAgg(p);const operatorType=p.operatorType||operatorTypeForFirm(p.firm);return `<tr><td><div class="entity-cell"><i class="entity-mark">${initials(p.name)}</i><div><button class="entity-link" data-investor="${p.id}">${esc(p.name)}</button>${p.email?`<small>${esc(p.email)}</small>`:""}${p.phone?`<small>연락처 ${esc(p.phone)}</small>`:""}</div></div></td><td><div class="firm-with-type">${p.firm?`<span>${esc(p.firm)}</span>`:""}${operatorTypeBadges(operatorType)}</div></td><td>${esc(p.title)}</td><td><div class="focus-tags">${p.focus.map(x=>`<span class="tag">${esc(x)}</span>`).join("")}</div></td><td>${a.followups}</td><td>${a.done}</td></tr>`}).join("")||`<tr><td colspan="6"><div class="empty investor-empty"><strong>등록된 심사역이 없습니다.</strong><span>심사역 추가 버튼을 눌러 직접 등록해 주세요.</span><button class="primary-button" data-open-investor>＋ 첫 심사역 추가</button></div></td></tr>`}</tbody></table></div></section>`}
 function companyAgg(company){const ms=db.meetings.filter(m=>m.companyId===company.id).map(joined);return {ms,investors:new Set(ms.map(m=>m.investorId)).size,active:ms.filter(m=>["검토 중","투자 확정"].includes(m.investmentStatus)).length,latest:ms.map(m=>m.date).sort().at(-1)||""}}
 function renderCompanies(){const active=activeCompanies();const companies=active.filter(c=>{const a=companyAgg(c);return match(c.name,c.ceo,c.sector,c.stage,c.description,...a.ms.flatMap(m=>[m.investor?.name,m.investor?.firm,m.memo]))}).sort((a,b)=>a.name.localeCompare(b.name,"ko-KR",{numeric:true,sensitivity:"base"}));return `<div class="company-list-tabs single" role="tablist" aria-label="기업 목록 구분"><button type="button" role="tab" aria-selected="true" class="active" data-company-list-view="companies">전체 기업 <b>${active.length}</b></button></div><div class="list-header"><p>기업을 기준으로 연결된 투자사와 심사역 접점을 확인합니다.</p><div class="list-header-actions"><span class="badge confirmed">관계형 보기</span><button class="primary-button" data-add-company>＋ 기업 직접 추가</button></div></div><section class="panel db-table"><div class="table-wrap"><table><thead><tr><th>기업</th><th>대표자</th><th>업종</th><th>단계</th><th>미팅</th><th>만난 심사역</th></tr></thead><tbody>${companies.map(c=>{const a=companyAgg(c);return `<tr><td><div class="entity-cell"><i class="entity-mark">${initials(c.name)}</i><div><button class="entity-link" data-company="${c.id}">${esc(c.name)}</button><small>${esc(c.description)}</small></div></div></td><td>${esc(c.ceo)}</td><td><span class="tag">${esc(c.sector)}</span></td><td>${esc(c.stage)}</td><td>${a.ms.length}</td><td>${a.investors}</td></tr>`}).join("")||`<tr><td colspan="6"><div class="empty">조건에 맞는 기업이 없습니다.</div></td></tr>`}</tbody></table></div></section>`}
 function renderHouses(){const headers=["투자사","투자사 종류","운영사 종류","주요 투자 섹터","이메일","메모"];const rows=(window.housesSeed||[]).filter(row=>match(...row));return `<div class="list-header"><p>구글시트의 하우스 탭 목록을 원본 순서와 표기 그대로 표시합니다.</p><span class="badge confirmed">${rows.length}개 하우스</span></div><section class="panel db-table house-table-panel"><div class="table-wrap"><table class="house-table"><thead><tr>${headers.map(header=>`<th>${header}</th>`).join("")}</tr></thead><tbody>${rows.map(row=>`<tr>${headers.map((_,index)=>`<td>${esc(row[index]??"")}</td>`).join("")}</tr>`).join("")||`<tr><td colspan="6"><div class="empty">표시할 하우스가 없습니다.</div></td></tr>`}</tbody></table></div></section>`}
-function renderAnnualLinkage(){const years=[2026,2025,2024];const items=db.meetings.map(joined).filter(m=>m.date.startsWith(`${annualYear}-`));const matched=items.filter(m=>["예정","진행 중","완료"].includes(m.followupStatus)).length;const matchRate=items.length?Math.round(matched/items.length*100):0;const completed=items.filter(m=>m.investmentStatus==="투자 완료");const reviewing=items.filter(m=>["검토 전","검토 중","투자 확정"].includes(m.investmentStatus)).length;const invested=completed.reduce((sum,m)=>sum+m.amount,0);const monthly=Array.from({length:12},(_,index)=>items.filter(m=>Number(m.date.slice(5,7))===index+1).length);const maxMonthly=Math.max(1,...monthly);const statusSummary=statusOrder.map(status=>({status,count:items.filter(m=>m.investmentStatus===status).length})).filter(x=>x.count);const rows=items.sort((a,b)=>b.date.localeCompare(a.date)).map(m=>`<tr><td>${fmtDate(m.date)}</td><td><button class="entity-link" data-company="${m.companyId}">${esc(m.company.name)}</button></td><td><button class="entity-link" data-investor="${m.investorId}">${esc(m.investor.name)}</button><small>${esc(m.investor.firm)}</small></td><td>${badge(m.followupStatus)}</td><td>${badge(m.investmentStatus)}</td><td>${fmtMoney(m.amount)}</td></tr>`).join("");return `<div class="annual-linkage-page"><section class="annual-dashboard-head"><div><span>INVESTMENT LINKAGE DASHBOARD</span><h2>${annualYear}년 투자 연계 대시보드</h2></div><div class="annual-year-tabs" aria-label="연도 선택">${years.map(year=>`<button class="${annualYear===year?"active":""}" data-annual-year="${year}" aria-pressed="${annualYear===year}">${year}</button>`).join("")}</div></section><section class="annual-summary-grid"><article><span>전체 투자 연계</span><strong>${items.length}<em>건</em></strong><p>기업·심사역 미팅 기준</p><i>◎</i></article><article><span>후속 미팅 매칭률</span><strong>${matchRate}<em>%</em></strong><p>${items.length?`${matched}/${items.length}건 후속 연결`:"등록된 연계 없음"}</p><i>↗</i></article><article><span>투자 검토 진행</span><strong>${reviewing}<em>건</em></strong><p>검토 전·검토 중·확정</p><i>◔</i></article><article><span>투자 완료</span><strong>${completed.length}<em>건</em></strong><p>${invested?`${fmtMoney(invested)} 누적`:"집계된 금액 없음"}</p><i>✓</i></article></section><div class="annual-insight-grid"><section class="panel annual-chart-panel"><header><div><span>MONTHLY LINKAGE</span><h2>월별 투자 연계 추이</h2></div><strong>${annualYear}</strong></header><div class="annual-bar-chart">${monthly.map((count,index)=>{const height=count?Math.max(18,Math.round(count/maxMonthly*100)):3;return `<div class="annual-bar"><div><i style="height:${height}%"></i><b style="bottom:${Math.min(94,height+3)}%">${count||""}</b></div><span>${index+1}월</span></div>`}).join("")}</div></section><section class="panel annual-conversion-panel"><header><span>CONVERSION</span><h2>후속 미팅 전환</h2></header><div class="annual-gauge" style="--rate:${matchRate*3.6}deg"><div><strong>${matchRate}%</strong><span>매칭률</span></div></div><div class="annual-status-list">${statusSummary.length?statusSummary.map(x=>`<div><span>${esc(x.status)}</span><strong>${x.count}건</strong></div>`).join(""):`<p class="annual-empty-status">해당 연도의 투자 상태 기록이 없습니다.</p>`}</div></section></div><section class="panel annual-linkage-table"><header><div><span>${annualYear} CONNECTIONS</span><h2>투자 연계 상세</h2></div><p>미팅 이력 DB와 자동 연결된 연간 현황입니다.</p></header><div class="table-wrap"><table><thead><tr><th>일자</th><th>기업</th><th>심사역 / 투자사</th><th>후속 미팅</th><th>투자 상태</th><th>투자 금액</th></tr></thead><tbody>${rows||`<tr><td colspan="6"><div class="empty">${annualYear}년 투자 연계 기록이 없습니다.</div></td></tr>`}</tbody></table></div></section></div>`}
+function annualResearchIsMeaningful(record={}){
+  const followup=record.followupStatus||"미확인";
+  const investment=normalizeResearchInvestmentStatus(record.investmentStatus);
+  return Boolean(String(record.memo||"").trim())||followup!=="미확인"||!["-","미확인"].includes(investment);
+}
+function annualPocketdayInvestor(value=""){
+  const details=pocketdayInvestorDetails(value);
+  const candidates=db.investors.filter(person=>normalizeInvestorPersonName(person.name)===normalizeInvestorPersonName(details.name));
+  if(!candidates.length)return null;
+  const firmKey=canonicalInvestorFirmKey(details.firm);
+  return candidates.find(person=>firmKey&&canonicalInvestorFirmKey(person.firm)===firmKey)||candidates[0];
+}
+function annualLinkageKey(item){return `${item.date||""}::${item.investorId||""}::${item.companyId||normalizeCompanyName(item.company?.name)}`}
+function annualLinkageItems(year){
+  const yearPrefix=`${year}-`;
+  const itemsByKey=new Map();
+  pocketdaySchedule.filter(event=>String(event.date||"").startsWith(yearPrefix)).forEach(event=>{
+    [...new Set(event.companies||[])].forEach(rawCompanyName=>{
+      const companyName=cleanImportedCompanyName(rawCompanyName);
+      const company=db.companies.find(item=>normalizeCompanyName(item.name)===normalizeCompanyName(companyName));
+      (event.investors||[]).forEach(rawInvestor=>{
+        const investor=annualPocketdayInvestor(rawInvestor);
+        if(!investor||!companyName)return;
+        const item={id:`schedule-${event.id}-${investor.id}-${company?.id||normalizeCompanyName(companyName)}`,companyId:company?.id||"",investorId:investor.id,date:event.date,type:pocketdayOperationType(event),followupStatus:"미정",investmentStatus:"검토 전",followupDate:"",amount:0,paymentStatus:"미지급",updatedAt:event.date,memo:"",source:"포켓데이 일정",company:company||{id:"",name:companyName,sector:""},investor};
+        itemsByKey.set(annualLinkageKey(item),item);
+      });
+    });
+  });
+  db.meetings.map(joined).filter(m=>m.company&&m.investor&&String(m.date||"").startsWith(yearPrefix)).forEach(meeting=>itemsByKey.set(annualLinkageKey(meeting),meeting));
+  Object.values(db.connectionResearch||{}).forEach(record=>{
+    if(!annualResearchIsMeaningful(record))return;
+    const investor=inv(record.investorId);
+    const company=record.companyId?com(record.companyId):db.companies.find(item=>normalizeCompanyName(item.name)===normalizeCompanyName(record.companyName));
+    const companyName=company?.name||record.companyName||"";
+    if(!investor||!companyName)return;
+    const normalizedCompany=normalizeCompanyName(companyName);
+    const event=investorPocketdayConnections(investor).find(item=>item.companies.some(name=>normalizeCompanyName(name)===normalizedCompany));
+    const storedDate=[record.updatedAt,record.checkedAt].map(value=>String(value||"").slice(0,10)).find(value=>/^\d{4}-\d{2}-\d{2}$/.test(value));
+    const date=event?.date||storedDate||"";
+    if(!date.startsWith(yearPrefix))return;
+    const item={id:`research-${record.investorId}-${company?.id||normalizedCompany}`,companyId:company?.id||"",investorId:investor.id,date,type:event?"포켓데이":"후속 현황",...researchMeetingStatuses(record),followupDate:"",amount:0,paymentStatus:"미지급",updatedAt:record.updatedAt||record.checkedAt||date,memo:record.memo||"",source:"만난 기업 후속 현황",company:company||{id:"",name:companyName,sector:""},investor};
+    itemsByKey.set(annualLinkageKey(item),item);
+  });
+  return [...itemsByKey.values()];
+}
+function renderAnnualLinkage(){
+  const years=[2026,2027];
+  const items=annualLinkageItems(annualYear);
+  const matched=items.filter(m=>["예정","진행 중","완료"].includes(m.followupStatus)).length;
+  const matchRate=items.length?Math.round(matched/items.length*100):0;
+  const completed=items.filter(m=>m.investmentStatus==="투자 완료");
+  const reviewing=items.filter(m=>m.investmentStatus==="검토 중").length;
+  const reviewingRate=items.length?Math.round(reviewing/items.length*100):0;
+  const completionRate=items.length?Math.round(completed.length/items.length*100):0;
+  const invested=completed.reduce((sum,m)=>sum+m.amount,0);
+  const monthly=Array.from({length:12},(_,index)=>items.filter(m=>Number(m.date.slice(5,7))===index+1).length);
+  const maxMonthly=Math.max(1,...monthly);
+  const statusSummary=statusOrder.map(status=>({status,count:items.filter(m=>m.investmentStatus===status).length})).filter(x=>x.count);
+  const filters={
+    all:{label:"전체 투자 연계",matches:()=>true},
+    followup:{label:"후속 미팅",matches:m=>["예정","진행 중","완료"].includes(m.followupStatus)},
+    reviewing:{label:"투자 검토 중",matches:m=>m.investmentStatus==="검토 중"},
+    completed:{label:"투자 완료",matches:m=>m.investmentStatus==="투자 완료"}
+  };
+  const activeFilter=filters[annualLinkageFilter]||filters.all;
+  const filteredItems=items.filter(activeFilter.matches);
+  const rows=[...filteredItems].sort((a,b)=>b.date.localeCompare(a.date)).map(m=>{const companyCell=m.companyId&&com(m.companyId)?`<button class="entity-link" data-company="${m.companyId}">${esc(m.company.name)}</button>`:`<strong>${esc(m.company.name)}</strong>`;return `<tr><td>${fmtDate(m.date)}</td><td>${companyCell}</td><td><button class="entity-link" data-investor="${m.investorId}">${esc(m.investor.name)}</button><small>${esc(m.investor.firm)}</small></td><td>${badge(m.followupStatus)}</td><td>${badge(m.investmentStatus)}</td><td>${fmtMoney(m.amount)}</td></tr>`}).join("");
+  const kpiButton=(filter,icon,label)=>`<button type="button" data-annual-kpi="${filter}" aria-label="${label} 목록 보기" aria-pressed="${annualLinkageFilter===filter}" title="${label} 목록 보기">${icon}</button>`;
+  return `<div class="annual-linkage-page">
+    <section class="annual-dashboard-head"><div><span>INVESTMENT LINKAGE DASHBOARD</span><h2>${annualYear}년 투자 연계 대시보드</h2></div><div class="annual-year-tabs" aria-label="연도 선택">${years.map(year=>`<button class="${annualYear===year?"active":""}" data-annual-year="${year}" aria-pressed="${annualYear===year}">${year}</button>`).join("")}</div></section>
+    <section class="annual-summary-grid"><article class="${annualLinkageFilter==="all"?"active":""}"><span>전체 투자 연계</span><strong>${items.length}<em>건</em></strong><p>포켓데이·미팅 연결 기준</p>${kpiButton("all","◎","전체 투자 연계")}</article><article class="${annualLinkageFilter==="followup"?"active":""}"><span>후속 미팅 매칭률</span><strong>${matchRate}<em>%</em></strong><p>${items.length?`${matched}/${items.length}건 후속 연결`:"등록된 연계 없음"}</p>${kpiButton("followup","↗","후속 미팅")}</article><article class="${annualLinkageFilter==="reviewing"?"active":""}"><span>투자 검토 진행</span><strong>${reviewing}<em>건</em></strong><p>투자 상태 · 검토 중</p>${kpiButton("reviewing","◔","투자 검토 중")}</article><article class="${annualLinkageFilter==="completed"?"active":""}"><span>투자 완료</span><strong>${completed.length}<em>건</em></strong><p>${invested?`${fmtMoney(invested)} 누적`:"집계된 금액 없음"}</p>${kpiButton("completed","✓","투자 완료")}</article></section>
+    <div class="annual-insight-grid">
+      <section class="panel annual-chart-panel"><header><div><span>MONTHLY LINKAGE</span><h2>월별 기업·심사역 연결 건수</h2></div><strong>${annualYear}</strong></header><div class="annual-bar-chart">${monthly.map((count,index)=>{const height=count?Math.max(18,Math.round(count/maxMonthly*100)):3;return `<div class="annual-bar"><div><i style="height:${height}%"></i><b style="bottom:${Math.min(94,height+3)}%">${count||""}</b></div><span>${index+1}월</span></div>`}).join("")}</div></section>
+      <section class="panel annual-conversion-panel"><header><span>CONVERSION</span><h2>후속 미팅·투자 전환</h2></header><div class="annual-gauge-grid"><div class="annual-gauge" style="--rate:${matchRate*3.6}deg"><div><strong>${matchRate}%</strong><span>후속 매칭률</span></div></div><div class="annual-gauge investment" style="--rate:${completionRate*3.6}deg"><div><strong>${completionRate}%</strong><span>투자 완료율</span></div></div></div><div class="annual-investment-rates" aria-label="투자 검토 비율"><article><div><span>투자 검토율</span><strong>${reviewingRate}%</strong></div><div class="annual-rate-track"><i style="width:${reviewingRate}%"></i></div><small>검토 중 ${reviewing}건 / 전체 ${items.length}건</small></article></div><div class="annual-status-list">${statusSummary.length?statusSummary.map(x=>`<div><span>${esc(x.status)}</span><strong>${x.count}건</strong></div>`).join(""):`<p class="annual-empty-status">해당 연도의 투자 상태 기록이 없습니다.</p>`}</div></section>
+    </div>
+    <section class="panel annual-linkage-table"><header><div><span>${annualYear} CONNECTIONS</span><h2>${activeFilter.label} 목록</h2></div><p>${filteredItems.length}건 · 아이콘을 누르면 목록이 바뀝니다.</p></header><div class="table-wrap"><table><thead><tr><th>일자</th><th>기업</th><th>심사역 / 투자사</th><th>후속 미팅</th><th>투자 상태</th><th>투자 금액</th></tr></thead><tbody>${rows||`<tr><td colspan="6"><div class="empty">${annualYear}년 ${activeFilter.label} 기록이 없습니다.</div></td></tr>`}</tbody></table></div></section>
+  </div>`;
+}
 function renderFollowups(data){const items=data.filter(m=>["예정","진행 중"].includes(m.followupStatus)).sort((a,b)=>(a.followupDate||"9999").localeCompare(b.followupDate||"9999"));return `<div class="followup-grid">${items.map(m=>`<article class="panel followup-card"><header>${badge(overdue(m)?"기한 지남":m.followupStatus,overdue(m)?"overdue":"scheduled")}<span style="font-size:8px;color:var(--muted)">${fmtDate(m.followupDate)}</span></header><h2><button class="entity-link" data-company="${m.companyId}">${esc(m.company.name)}</button></h2><p>${esc(m.memo||"등록된 다음 액션이 없습니다.")}</p><footer><button class="entity-link" data-investor="${m.investorId}">${esc(m.investor.name)} · ${esc(m.investor.firm)}</button>${badge(m.investmentStatus)}</footer></article>`).join("")||`<div class="panel empty">예정된 후속 미팅이 없습니다.</div>`}</div>`}
 
 function pocketdayLabel(event){return event.round?`제${event.round}회`:event.id}
@@ -268,7 +403,15 @@ function addPocketdayOperationType(){const input=document.getElementById("operat
 
 function openInvestor(id){selectedInvestorId=id;switchView("investorDetail")}
 function investorPocketdayConnections(person){
-  return pocketdaySchedule.filter(event=>(event.investors||[]).some(value=>pocketdayInvestorDetails(value).name===person.name)).sort((a,b)=>b.date.localeCompare(a.date)).map(event=>({id:event.id,round:event.round,date:event.date,status:event.status==="완료"?"참여 완료":"참여 예정",companies:[...new Set((event.companies||[]).map(cleanImportedCompanyName).filter(Boolean))]}));
+  const personName=normalizeInvestorPersonName(person.name);
+  const personFirm=normalizeFirmName(person.firm);
+  const matchedFirms=new Set(pocketdaySchedule.flatMap(event=>(event.investors||[]).map(pocketdayInvestorDetails)).filter(item=>normalizeInvestorPersonName(item.name)===personName).map(item=>normalizeFirmName(item.firm)).filter(Boolean));
+  const needsFirmMatch=Boolean(personFirm)&&matchedFirms.size>1;
+  return pocketdaySchedule.filter(event=>(event.investors||[]).some(value=>{
+    const item=pocketdayInvestorDetails(value);
+    if(normalizeInvestorPersonName(item.name)!==personName)return false;
+    return !needsFirmMatch||normalizeFirmName(item.firm)===personFirm;
+  })).sort((a,b)=>b.date.localeCompare(a.date)).map(event=>({id:event.id,round:event.round,date:event.date,status:event.status==="완료"?"참여 완료":"참여 예정",companies:[...new Set((event.companies||[]).map(cleanImportedCompanyName).filter(Boolean))]}));
 }
 function researchKey(investorId,companyId="",companyName=""){return `${investorId}::${companyId||normalizeCompanyName(companyName)}`}
 function investorResearchCompanies(person,connections){
@@ -284,12 +427,12 @@ function researchRecord(investorId,companyId="",companyName=""){
   const latest=related[0];
   return {key,investorId,companyId,companyName,followupStatus:latest?.followupStatus||"미확인",investmentStatus:"미확인",checkedAt:latest?.updatedAt||"",source:latest?"미팅 이력":"",memo:latest?.memo||""};
 }
-const researchInvestmentOptions=["-","미확인","모니터링","미팅","진행중","투자완료","보육중"];
+const researchInvestmentOptions=["-","미확인","모니터링","미팅","진행중","검토종료","투자완료","보육중"];
 function normalizeResearchInvestmentStatus(value=""){
   return researchInvestmentOptions.includes(value)?value:"미확인";
 }
 function researchMeetingStatuses(record){
-  const investmentStatus=({"-":"검토 전","미확인":"검토 전","모니터링":"검토 전","미팅":"검토 중","진행중":"투자 확정","투자완료":"투자 완료","보육중":"투자 완료"})[normalizeResearchInvestmentStatus(record.investmentStatus)]||"검토 전";
+  const investmentStatus=({"-":"검토 전","미확인":"검토 전","모니터링":"검토 전","미팅":"검토 중","진행중":"투자 확정","검토종료":"미투자","투자완료":"투자 완료","보육중":"투자 완료"})[normalizeResearchInvestmentStatus(record.investmentStatus)]||"검토 전";
   return {followupStatus:record.followupStatus==="미확인"?"미정":record.followupStatus,investmentStatus};
 }
 function latestPocketdayMeeting(investorId,companyName){
@@ -329,9 +472,22 @@ if(!localStorage.getItem(blankResearchMeetingCleanupKey)){
   localStorage.setItem(blankResearchMeetingCleanupKey,"1");
 }
 function researchNeedsCheck(record){return record.followupStatus==="미확인"||["-","미확인"].includes(record.investmentStatus)}
-function researchStatusTone(value){return value==="투자완료"||value==="투자 완료"||value==="완료"?"complete":value==="보육중"?"nurture":["진행","진행중","진행 중","검토 중"].includes(value)?"progress":["예정","미팅"].includes(value)?"scheduled":value==="미확인"?"unknown":"neutral"}
+function researchStatusTone(value){return value==="투자완료"||value==="투자 완료"||value==="완료"?"complete":value==="보육중"?"nurture":value==="검토종료"?"closed":["진행","진행중","진행 중","검토 중"].includes(value)?"progress":["예정","미팅"].includes(value)?"scheduled":value==="미확인"?"unknown":"neutral"}
 function researchStatusBadge(value){return `<span class="research-status ${researchStatusTone(value)}">${esc(value||"미확인")}</span>`}
 function researchInlineSelect(field,value,investorId,companyId,companyName){const normalizedValue=field==="investmentStatus"?normalizeResearchInvestmentStatus(value):value;const options=field==="followupStatus"?["미확인","없음","예정","진행 중","완료"]:researchInvestmentOptions;const label=field==="followupStatus"?"후속 미팅":"투자 상태";return `<label class="research-inline-select ${researchStatusTone(normalizedValue)}"><select data-inline-research data-field="${field}" data-investor-id="${investorId}" data-company-id="${companyId}" data-company-name="${esc(companyName)}" aria-label="${esc(companyName)} ${label}">${options.map(option=>`<option ${option===normalizedValue?"selected":""}>${option}</option>`).join("")}</select></label>`}
+function renderFundDetails(value){
+  const text=String(value||"").replace(/\r\n?/g,"\n").trim();
+  if(!text)return `<strong class="investor-info-empty">-</strong>`;
+  const bulletMarker=/^[•●▪◦\-*]\s*/;
+  const blocks=text.split(/\n\s*\n/).map(block=>block.split("\n").map(line=>line.trim()).filter(Boolean)).filter(lines=>lines.length);
+  const content=blocks.map(lines=>{
+    const bullets=lines.filter(line=>bulletMarker.test(line)).map(line=>line.replace(bulletMarker,""));
+    const headings=lines.filter(line=>!bulletMarker.test(line));
+    if(!bullets.length)return `<section><p>${headings.map(esc).join("<br>")}</p></section>`;
+    return `<section>${headings.length?`<p>${headings.map(esc).join("<br>")}</p>`:""}<ul>${bullets.map(item=>`<li>${esc(item)}</li>`).join("")}</ul></section>`;
+  }).join("");
+  return `<div class="investor-fund-display">${content}</div>`;
+}
 function renderInvestorDetail(){
   const p=inv(selectedInvestorId)||db.investors[0];
   if(!p)return `<div class="panel empty">등록된 심사역이 없습니다.</div>`;
@@ -350,7 +506,38 @@ function renderInvestorDetail(){
   const checkCount=researchItems.filter(item=>researchNeedsCheck(item.record)).length;
   const researchRows=researchItems.map(item=>{const record=item.record;const companyId=item.company?.id||"";const categories=[researchNeedsCheck(record)?"needs":"",["예정","진행","진행 중","완료"].includes(record.followupStatus)?"followup":"",["투자완료","보육중"].includes(record.investmentStatus)?"invested":""].filter(Boolean).join(" ");const companyLabel=item.company?`<button class="entity-link" data-company="${item.company.id}">${esc(item.name)}</button>`:`<strong>${esc(item.name)}</strong>`;return `<tr data-research-row data-search="${esc([item.name,record.followupStatus,record.investmentStatus,record.source,record.memo].join(" ").toLowerCase())}" data-categories="${categories}"><td>${companyLabel}<small>${esc(item.eventIds.join(", "))}</small></td><td>${researchInlineSelect("followupStatus",record.followupStatus,p.id,companyId,item.name)}</td><td>${researchInlineSelect("investmentStatus",record.investmentStatus,p.id,companyId,item.name)}</td><td class="research-memo">${esc(record.memo||"조사 필요")}</td><td><button class="research-edit-button" data-edit-research data-investor-id="${p.id}" data-company-id="${companyId}" data-company-name="${esc(item.name)}">${researchNeedsCheck(record)?"현황 입력":"현황 수정"}</button></td></tr>`}).join("");
   const researchSection=`<section class="investor-detail-section investor-research-section"><header><div><h2>만난 기업 후속 현황</h2><p>포켓데이에서 만난 기업의 후속 미팅 여부와 투자 진행 상황을 조사하고 관리합니다.</p></div></header><div class="research-summary"><article><i>◎</i><span>전체 기업<strong>${researchItems.length}<em>개사</em></strong></span></article><article><i>▣</i><span>후속 미팅<strong>${followupCount}<em>개사</em></strong></span></article><article><i>▥</i><span>투자 완료<strong>${investedCount}<em>개사</em></strong></span></article><article class="needs"><i>!</i><span>확인 필요<strong>${checkCount}<em>개사</em></strong></span></article></div><div class="research-toolbar"><label><span>⌕</span><input type="search" data-research-search placeholder="기업명, 심사역 검색" aria-label="기업명, 심사역 검색" /></label><div class="research-filters"><button class="active" data-research-filter="all">전체</button><button data-research-filter="needs">확인 필요</button><button data-research-filter="followup">후속 미팅</button><button data-research-filter="invested">투자 완료</button></div></div><div class="research-table-wrap"><table class="research-table"><thead><tr><th>기업</th><th>후속 미팅</th><th>투자 상태</th><th>조사 메모</th><th>관리</th></tr></thead><tbody>${researchRows||`<tr><td colspan="5"><div class="empty">조사할 포켓데이 참여 기업이 없습니다.</div></td></tr>`}</tbody></table><div class="empty research-filter-empty" hidden>조건에 맞는 기업이 없습니다.</div></div></section>`;
-  return `<div class="investor-detail-page"><button class="investor-detail-back" data-go="investors">← 심사역 목록</button><header class="investor-detail-hero"><span class="eyebrow">INVESTOR DETAIL</span><div class="investor-detail-identity"><div class="investor-detail-avatar">${initials(p.name)}</div><div><h1>${esc(p.name)}</h1><p>${esc(profileLine)}</p></div></div><button class="primary-button investor-detail-edit" data-edit-investor="${p.id}">정보 수정</button></header><section class="investor-detail-stats"><article><strong>${a.ms.length}</strong><span>전체 미팅</span></article><article><strong>${a.followups}</strong><span>후속 미팅</span></article><article><strong>${a.done}</strong><span>투자 완료</span></article></section><section class="investor-detail-section"><header><h2>기본 정보</h2><p>심사역의 소속과 투자 활동 기본 정보를 확인합니다.</p></header><div class="investor-info-grid full-page"><div class="investor-info-card"><i>▥</i><span><small>소속 투자사</small><strong>${esc(firm)}</strong></span></div><div class="investor-info-card"><i>₩</i><span><small>펀드</small><strong>${esc(p.fund||"미등록")}</strong></span></div><div class="investor-info-card"><i>◎</i><span><small>운영사 종류</small><strong class="operator-type-list">${operatorTypeBadges(operatorType)}</strong></span></div><div class="investor-info-card"><i>♙</i><span><small>직책</small><strong>${esc(title)}</strong></span></div><div class="investor-info-card"><i>✉</i><span><small>이메일</small><strong>${esc(email)}</strong></span></div><div class="investor-info-card"><i>⌕</i><span><small>연락처</small><strong>${esc(phone)}</strong></span></div><div class="investor-info-card"><i>◫</i><span><small>관심 분야</small><strong class="investor-focus-list">${focus}</strong></span></div></div></section><section class="investor-detail-section investor-pocketday-section"><header><div><h2>포켓데이에서 만난 기업</h2><p>${esc(p.name)} 심사역의 포켓데이 참여 회차별 기업 목록입니다.</p></div><span>${connections.length}회 · ${uniqueCompanies}개사</span></header><div class="investor-pocketday-list">${connectionRows||`<div class="empty">포켓데이 참여 기업 이력이 없습니다.</div>`}</div></section>${researchSection}<section class="investor-detail-section investor-history-section"><header><h2>연결된 전체 이력</h2><p>${esc(p.name)} 심사역과 연결된 미팅·투자·후속 기록입니다.</p></header><div class="investor-history-list">${a.ms.sort((x,y)=>y.date.localeCompare(x.date)).map(m=>`<article><time>${fmtDate(m.date)}</time><div><button class="entity-link" data-company="${m.companyId}">${esc(m.company.name)}</button><p>${esc(m.type)} · ${esc(m.memo)}</p></div><div class="investor-history-status">${badge(m.investmentStatus)}<span>후속 ${esc(m.followupStatus)}</span></div></article>`).join("")||`<div class="empty">연결된 이력이 없습니다.</div>`}</div></section></div>`;
+  return `<div class="investor-detail-page"><button class="investor-detail-back" data-go="investors">← 심사역 목록</button><header class="investor-detail-hero"><span class="eyebrow">INVESTOR DETAIL</span><div class="investor-detail-identity"><div class="investor-detail-avatar">${initials(p.name)}</div><div><h1>${esc(p.name)}</h1><p>${esc(profileLine)}</p></div></div><div class="investor-detail-actions"><button class="investor-detail-delete" data-delete-investor="${p.id}">심사역 삭제</button><button class="primary-button investor-detail-edit" data-edit-investor="${p.id}">정보 수정</button></div></header><section class="investor-detail-stats"><article><strong>${a.ms.length}</strong><span>전체 미팅</span></article><article><strong>${a.followups}</strong><span>후속 미팅</span></article><article><strong>${a.done}</strong><span>투자 완료</span></article></section><section class="investor-detail-section"><header><h2>기본 정보</h2><p>심사역의 소속과 투자 활동 기본 정보를 확인합니다.</p></header><div class="investor-info-grid full-page"><div class="investor-info-card"><i>▥</i><span><small>소속 투자사</small><strong>${esc(firm)}</strong></span></div><div class="investor-info-card investor-fund-card"><i>₩</i><span><small>펀드</small>${renderFundDetails(p.fund)}</span></div><div class="investor-info-card"><i>◎</i><span><small>운영사 종류</small><strong class="operator-type-list">${operatorTypeBadges(operatorType)}</strong></span></div><div class="investor-info-card"><i>♙</i><span><small>직책</small><strong>${esc(title)}</strong></span></div><div class="investor-info-card"><i>✉</i><span><small>이메일</small><strong>${esc(email)}</strong></span></div><div class="investor-info-card"><i>⌕</i><span><small>연락처</small><strong>${esc(phone)}</strong></span></div><div class="investor-info-card"><i>◫</i><span><small>관심 분야</small><strong class="investor-focus-list">${focus}</strong></span></div><div class="investor-info-card investor-memo-card"><i>✎</i><span><small>메모</small><strong class="investor-memo-value ${p.memo?"":"investor-info-empty"}">${esc(p.memo||"메모 없음")}</strong></span></div></div></section><section class="investor-detail-section investor-pocketday-section"><header><div><h2>포켓데이에서 만난 기업</h2><p>${esc(p.name)} 심사역의 포켓데이 참여 회차별 기업 목록입니다.</p></div><span>${connections.length}회 · ${uniqueCompanies}개사</span></header><div class="investor-pocketday-list">${connectionRows||`<div class="empty">포켓데이 참여 기업 이력이 없습니다.</div>`}</div></section>${researchSection}<section class="investor-detail-section investor-history-section"><header><h2>연결된 전체 이력</h2><p>${esc(p.name)} 심사역과 연결된 미팅·투자·후속 기록입니다.</p></header><div class="investor-history-list">${a.ms.sort((x,y)=>y.date.localeCompare(x.date)).map(m=>`<article><time>${fmtDate(m.date)}</time><div><button class="entity-link" data-company="${m.companyId}">${esc(m.company.name)}</button><p>${esc(m.type)} · ${esc(m.memo)}</p></div><div class="investor-history-status">${badge(m.investmentStatus)}<span>후속 ${esc(m.followupStatus)}</span></div></article>`).join("")||`<div class="empty">연결된 이력이 없습니다.</div>`}</div></section></div>`;
+}
+async function deleteInvestor(id){
+  const person=inv(id);
+  if(!person){showToast("삭제할 심사역을 찾지 못했습니다.");return}
+  const personName=normalizeInvestorPersonName(person.name);
+  const personFirm=canonicalInvestorFirmKey(person.firm);
+  const matches=value=>{const details=pocketdayInvestorDetails(value);if(normalizeInvestorPersonName(details.name)!==personName)return false;return !personFirm||canonicalInvestorFirmKey(details.firm)===personFirm};
+  const scheduleEvents=new Set();
+  pocketdaySchedule.forEach(event=>(event.investors||[]).forEach(value=>{if(matches(value))scheduleEvents.add(event.id)}));
+  const meetingCount=db.meetings.filter(item=>item.investorId===id).length;
+  const researchCount=Object.values(db.connectionResearch||{}).filter(record=>record?.investorId===id).length;
+  const paymentCount=(db.reviewerPayments||[]).filter(item=>item.investorId===id).length;
+  const details=[meetingCount?`미팅 ${meetingCount}건`:"",researchCount?`후속 현황 ${researchCount}건`:"",paymentCount?`심사비 ${paymentCount}건`:""].filter(Boolean).join(", ");
+  const scheduleNotice=scheduleEvents.size?`\n포켓데이 일정 ${scheduleEvents.size}회의 원본 명단은 유지되며, 심사역 목록 자동 추가만 차단됩니다.`:"";
+  if(!window.confirm(`${person.name} 심사역을 삭제할까요?${details?`\n연결된 ${details}도 함께 삭제됩니다.`:""}${scheduleNotice}\n삭제 후에는 되돌릴 수 없습니다.`))return;
+  const removedIdentities=new Set([pocketdayInvestorIdentity(person.name,person.firm)]);
+  db.deletedInvestorIdentities=[...new Set([...(db.deletedInvestorIdentities||[]),...removedIdentities])];
+  db.investors=db.investors.filter(item=>item.id!==id);
+  db.meetings=db.meetings.filter(item=>item.investorId!==id);
+  db.connectionResearch=Object.fromEntries(Object.entries(db.connectionResearch||{}).filter(([,record])=>record?.investorId!==id));
+  db.reviewerPayments=(db.reviewerPayments||[]).filter(item=>item.investorId!==id);
+  try{
+    await saveAndSync();
+    selectedInvestorId=db.investors[0]?.id||"";
+    fillSelects();
+    showToast(`${person.name} 심사역을 삭제했습니다.`);
+    switchView("investors");
+  }catch(error){
+    console.error("Investor delete failed",error);
+    showToast("삭제 내용을 공용 데이터에 저장하지 못했습니다. 연결 상태를 확인해 주세요.");
+  }
 }
 function openCompany(id){const company=com(id);if(!company||company.deletedAt){showToast("삭제된 기업입니다. 기존 미팅 이력은 유지됩니다.");return}selectedCompanyId=id;switchView("companyDetail")}
 
@@ -396,10 +583,10 @@ function mergeCompanyPocketdayPanels(){
 }
 function render(){const meta=viewMeta[currentView]||viewMeta.dashboard;const roleHome=["companyHome","investorHome","investorReview","investorFeedback","investorMeetings","investorDetail","companyDetail"].includes(currentView);document.getElementById("pageHeading").hidden=roleHome;document.getElementById("pageEyebrow").textContent=meta[0];document.getElementById("pageTitle").textContent=meta[1];document.getElementById("pageSubtitle").textContent=meta[2];const data=visibleMeetings();root.innerHTML=currentView==="companyHome"?renderCompanyHome():currentView==="investorHome"?renderInvestorHome():currentView==="investorReview"?renderInvestorReview():currentView==="investorFeedback"?renderInvestorFeedback():currentView==="investorMeetings"?renderInvestorMeetings():currentView==="investorDetail"?renderInvestorDetail():currentView==="companyDetail"?renderCompanyDetail():currentView==="adminHome"?renderAnnualLinkage():currentView==="dashboard"?renderDashboard(data):currentView==="meetings"?renderMeetings(data):currentView==="investors"?renderInvestors():currentView==="companiesInProgress"?renderCompanies("진행중"):currentView==="companiesCompleted"?renderCompanies("완료"):currentView==="companies"?renderCompanies():currentView==="houses"?renderHouses():currentView==="pocketdaySchedule"?renderPocketdaySchedule():currentView==="followups"?renderFollowups(data):currentView==="annualLinkage"?renderAnnualLinkage():renderPipeline(data,true);mergeCompanyPocketdayPanels();if(currentRole==="admin")renderAdminSidebarStats();bindDynamic()}
 function switchView(view){currentView=view;document.querySelectorAll(".nav-item").forEach(x=>x.classList.toggle("active",x.dataset.view===view||(view==="investorDetail"&&x.dataset.view==="investors")||(["companyDetail","companiesInProgress","companiesCompleted"].includes(view)&&x.dataset.view==="companies")));document.querySelector(".sidebar").classList.remove("open");render();syncRoute()}
-function bindDynamic(){document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>switchView(b.dataset.go));document.querySelectorAll("[data-open-investor]").forEach(b=>b.onclick=()=>openInvestorModal());document.querySelectorAll("[data-edit-investor]").forEach(b=>b.onclick=()=>openInvestorModal(b.dataset.editInvestor));document.querySelectorAll("[data-edit-company]").forEach(b=>b.onclick=()=>openCompanyModal(b.dataset.editCompany));document.querySelectorAll("[data-delete-company]").forEach(b=>b.onclick=()=>deleteCompany(b.dataset.deleteCompany));document.querySelectorAll("[data-annual-year]").forEach(b=>b.onclick=()=>{annualYear=Number(b.dataset.annualYear);render()});document.querySelectorAll("[data-pocketday-year]").forEach(b=>b.onclick=()=>{pocketdayYear=Number(b.dataset.pocketdayYear);render()});document.querySelectorAll("[data-investor]").forEach(b=>b.onclick=()=>openInvestor(b.dataset.investor));document.querySelectorAll("[data-company]").forEach(b=>b.onclick=()=>{if(currentRole==="investor"){const company=com(b.dataset.company);if(!company||company.deletedAt){showToast("삭제된 기업입니다. 기존 미팅 이력은 유지됩니다.");return}selectedInvestorCompanyId=b.dataset.company;switchView("investorMeetings")}else openCompany(b.dataset.company)});document.querySelectorAll("[data-interest-company]").forEach(b=>b.onclick=e=>{e.stopPropagation();const companyId=b.dataset.interestCompany;const companyName=b.dataset.interestName||com(companyId)?.name||"기업";const active=investorInterestCompanyIds.has(companyId);active?investorInterestCompanyIds.delete(companyId):investorInterestCompanyIds.add(companyId);saveInvestorInterestCompanies();b.classList.toggle("active",!active);b.textContent=active?"☆":"★";b.setAttribute("aria-pressed",String(!active));b.setAttribute("aria-label",`${companyName} 관심 기업 ${active?"표시":"해제"}`);b.title=`관심 기업 ${active?"표시":"해제"}`;showToast(active?"관심 기업 표시를 해제했습니다.":"관심 기업으로 표시했습니다.")});document.querySelectorAll("[data-ir]").forEach(b=>b.onclick=e=>{e.stopPropagation();showToast(`${com(b.dataset.ir)?.name||"기업"} IR 자료를 열었습니다.`)});document.querySelectorAll("[data-ir-file]").forEach(b=>b.onclick=()=>showToast("IR 자료를 열었습니다."));document.querySelectorAll("[data-add-ir]").forEach(b=>b.onclick=()=>showToast("IR 자료 추가 기능을 준비했습니다."));document.querySelectorAll("[data-review-jump]").forEach(b=>b.onclick=()=>document.getElementById("review-company-list")?.scrollIntoView({behavior:"smooth",block:"start"}));document.querySelectorAll("[data-pocket-tab]").forEach(b=>b.onclick=()=>{pocketViewMode=b.dataset.pocketTab;render()});document.querySelectorAll("[data-pocket-open]").forEach(b=>b.onclick=()=>switchView("investorReview"));const pocketSearch=document.querySelector("[data-pocket-search]");if(pocketSearch)pocketSearch.oninput=e=>{const term=e.target.value.trim().toLowerCase();const rows=[...document.querySelectorAll("[data-pocket-row]")];rows.forEach(row=>row.hidden=!row.dataset.search.toLowerCase().includes(term));const empty=document.querySelector(".pocket-search-empty");if(empty)empty.hidden=rows.some(row=>!row.hidden)};document.querySelectorAll("[data-open-meeting]").forEach(b=>b.onclick=openMeetingModal);document.querySelectorAll("[data-meeting-detail]").forEach(b=>b.onclick=()=>showToast("미팅 상세 내용을 확인했습니다."));document.querySelectorAll("[data-status-id]").forEach(s=>s.onchange=()=>{const m=db.meetings.find(x=>x.id===s.dataset.statusId);m.investmentStatus=s.value;m.updatedAt=today();save();showToast("투자 상태를 업데이트했습니다.");render()})}
+function bindDynamic(){document.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>switchView(b.dataset.go));document.querySelectorAll("[data-open-investor]").forEach(b=>b.onclick=()=>openInvestorModal());document.querySelectorAll("[data-edit-investor]").forEach(b=>b.onclick=()=>openInvestorModal(b.dataset.editInvestor));document.querySelectorAll("[data-delete-investor]").forEach(b=>b.onclick=()=>deleteInvestor(b.dataset.deleteInvestor));document.querySelectorAll("[data-edit-company]").forEach(b=>b.onclick=()=>openCompanyModal(b.dataset.editCompany));document.querySelectorAll("[data-delete-company]").forEach(b=>b.onclick=()=>deleteCompany(b.dataset.deleteCompany));document.querySelectorAll("[data-annual-year]").forEach(b=>b.onclick=()=>{annualYear=Number(b.dataset.annualYear);render()});document.querySelectorAll("[data-pocketday-year]").forEach(b=>b.onclick=()=>{pocketdayYear=Number(b.dataset.pocketdayYear);render()});document.querySelectorAll("[data-investor]").forEach(b=>b.onclick=()=>openInvestor(b.dataset.investor));document.querySelectorAll("[data-company]").forEach(b=>b.onclick=()=>{if(currentRole==="investor"){const company=com(b.dataset.company);if(!company||company.deletedAt){showToast("삭제된 기업입니다. 기존 미팅 이력은 유지됩니다.");return}selectedInvestorCompanyId=b.dataset.company;switchView("investorMeetings")}else openCompany(b.dataset.company)});document.querySelectorAll("[data-interest-company]").forEach(b=>b.onclick=e=>{e.stopPropagation();const companyId=b.dataset.interestCompany;const companyName=b.dataset.interestName||com(companyId)?.name||"기업";const active=investorInterestCompanyIds.has(companyId);active?investorInterestCompanyIds.delete(companyId):investorInterestCompanyIds.add(companyId);saveInvestorInterestCompanies();b.classList.toggle("active",!active);b.textContent=active?"☆":"★";b.setAttribute("aria-pressed",String(!active));b.setAttribute("aria-label",`${companyName} 관심 기업 ${active?"표시":"해제"}`);b.title=`관심 기업 ${active?"표시":"해제"}`;showToast(active?"관심 기업 표시를 해제했습니다.":"관심 기업으로 표시했습니다.")});document.querySelectorAll("[data-ir]").forEach(b=>b.onclick=e=>{e.stopPropagation();showToast(`${com(b.dataset.ir)?.name||"기업"} IR 자료를 열었습니다.`)});document.querySelectorAll("[data-ir-file]").forEach(b=>b.onclick=()=>showToast("IR 자료를 열었습니다."));document.querySelectorAll("[data-add-ir]").forEach(b=>b.onclick=()=>showToast("IR 자료 추가 기능을 준비했습니다."));document.querySelectorAll("[data-review-jump]").forEach(b=>b.onclick=()=>document.getElementById("review-company-list")?.scrollIntoView({behavior:"smooth",block:"start"}));document.querySelectorAll("[data-pocket-tab]").forEach(b=>b.onclick=()=>{pocketViewMode=b.dataset.pocketTab;render()});document.querySelectorAll("[data-pocket-open]").forEach(b=>b.onclick=()=>switchView("investorReview"));const pocketSearch=document.querySelector("[data-pocket-search]");if(pocketSearch)pocketSearch.oninput=e=>{const term=e.target.value.trim().toLowerCase();const rows=[...document.querySelectorAll("[data-pocket-row]")];rows.forEach(row=>row.hidden=!row.dataset.search.toLowerCase().includes(term));const empty=document.querySelector(".pocket-search-empty");if(empty)empty.hidden=rows.some(row=>!row.hidden)};document.querySelectorAll("[data-open-meeting]").forEach(b=>b.onclick=openMeetingModal);document.querySelectorAll("[data-meeting-detail]").forEach(b=>b.onclick=()=>showToast("미팅 상세 내용을 확인했습니다."));document.querySelectorAll("[data-status-id]").forEach(s=>s.onchange=()=>{const m=db.meetings.find(x=>x.id===s.dataset.statusId);m.investmentStatus=s.value;m.updatedAt=today();save();showToast("투자 상태를 업데이트했습니다.");render()})}
 function investorSearchLabel(person){return [person.name,person.firm].filter(Boolean).join(" · ")}
 function fillSelects(){document.getElementById("companySelect").innerHTML=activeCompanies().map(c=>`<option value="${c.id}">${esc(c.name)} · ${esc(c.sector)}</option>`).join("");document.getElementById("investorOptions").innerHTML=db.investors.map(p=>`<option value="${esc(investorSearchLabel(p))}"></option>`).join("")}
-function openInvestorModal(id=""){const form=document.getElementById("investorForm");const p=id?inv(id):null;form.reset();form.elements.id.value=p?.id||"";form.elements.name.value=p?.name||"";form.elements.firm.value=p?.firm||"";form.elements.fund.value=p?.fund||"";form.elements.operatorType.value=p?.operatorType||"";form.elements.title.value=p?.title||"";form.elements.email.value=p?.email||"";form.elements.phone.value=p?.phone||"";form.elements.focus.value=(p?.focus||[]).join(", ");document.getElementById("investorModalTitle").textContent=p?"심사역 정보 수정":"심사역 직접 추가";document.getElementById("investorModalIntro").textContent=p?"수정한 정보는 심사역 목록과 연결 화면에 바로 반영됩니다.":"심사역의 기본 정보를 입력하면 목록과 미팅 기록에서 바로 선택할 수 있습니다.";document.getElementById("investorSubmitLabel").textContent=p?"수정 내용 저장":"심사역 목록에 저장";document.getElementById("investorModal").hidden=false;setTimeout(()=>form.elements.name.focus(),0)}
+function openInvestorModal(id=""){const form=document.getElementById("investorForm");const p=id?inv(id):null;form.reset();form.dataset.originalFirm=p?.firm||"";form.elements.id.value=p?.id||"";form.elements.name.value=p?.name||"";form.elements.firm.value=p?.firm||"";form.elements.fund.value=p?.fund||"";form.elements.operatorType.value=p?.operatorType||operatorTypeForFirm(p?.firm)||"";form.elements.title.value=p?.title||"";form.elements.email.value=p?.email||"";form.elements.phone.value=p?.phone||"";form.elements.memo.value=p?.memo||"";form.elements.focus.value=(p?.focus||[]).join(", ");document.getElementById("investorModalTitle").textContent=p?"심사역 정보 수정":"심사역 직접 추가";document.getElementById("investorModalIntro").textContent=p?"수정한 정보는 심사역 목록과 연결 화면에 바로 반영됩니다.":"심사역의 기본 정보를 입력하면 목록과 미팅 기록에서 바로 선택할 수 있습니다.";document.getElementById("investorSubmitLabel").textContent=p?"수정 내용 저장":"심사역 목록에 저장";document.getElementById("investorModal").hidden=false;setTimeout(()=>form.elements.name.focus(),0)}
 function closeInvestorModal(){document.getElementById("investorModal").hidden=true}
 function openCompanyModal(id=""){
   const form=document.getElementById("companyForm");
@@ -466,7 +653,52 @@ function closeMeetingModal(){document.getElementById("meetingModal").hidden=true
 function exportCSV(){const rows=db.meetings.map(joined).map(m=>[m.date,m.company.name,m.investor.name,m.investor.firm,m.followupStatus,m.investmentStatus,m.amount,m.paymentStatus||"미지급",m.memo]);const csv=[["포켓데이 날짜","기업","심사역","투자사","후속 상태","투자 상태","투자금액","지급","메모"],...rows].map(r=>r.map(v=>`"${String(v??"").replaceAll('"','""')}"`).join(",")).join("\n");const url=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv"}));const a=document.createElement("a");a.href=url;a.download="pocket-meeting-history.csv";a.click();URL.revokeObjectURL(url)}
 
 document.querySelectorAll("[data-enter-role]").forEach(b=>b.onclick=()=>enterRole(b.dataset.enterRole));document.getElementById("backToPortal").onclick=leaveWorkspace;document.getElementById("globalSearch").oninput=e=>{query=e.target.value;render()};document.getElementById("mobileMenu").onclick=()=>document.querySelector(".sidebar").classList.toggle("open");document.getElementById("openMeetingModal").onclick=openMeetingModal;document.querySelectorAll("[data-close-modal]").forEach(b=>b.onclick=closeMeetingModal);document.querySelectorAll("[data-close-investor-modal]").forEach(b=>b.onclick=closeInvestorModal);document.querySelectorAll("[data-close-company-modal]").forEach(b=>b.onclick=closeCompanyModal);document.getElementById("meetingModal").onclick=e=>{if(e.target.id==="meetingModal")closeMeetingModal()};document.getElementById("investorModal").onclick=e=>{if(e.target.id==="investorModal")closeInvestorModal()};document.getElementById("companyModal").onclick=e=>{if(e.target.id==="companyModal")closeCompanyModal()};document.getElementById("closeDrawer").onclick=()=>document.getElementById("drawerBackdrop").hidden=true;document.getElementById("drawerBackdrop").onclick=e=>{if(e.target.id==="drawerBackdrop")e.currentTarget.hidden=true};document.getElementById("exportButton").onclick=exportCSV;document.addEventListener("keydown",e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="k"&&currentRole==="admin"){e.preventDefault();document.getElementById("globalSearch").focus()}if(e.key==="Escape"){closeMeetingModal();closeInvestorModal();closeCompanyModal();document.getElementById("drawerBackdrop").hidden=true}});
-document.getElementById("investorForm").onsubmit=e=>{e.preventDefault();const form=e.currentTarget;const x=Object.fromEntries(new FormData(form).entries());const email=x.email.trim();if(email&&db.investors.some(p=>p.id!==x.id&&p.email?.toLowerCase()===email.toLowerCase())){showToast("이미 등록된 이메일입니다.");return}const values={name:x.name.trim(),firm:x.firm.trim(),fund:x.fund.trim(),operatorType:x.operatorType,title:x.title.trim(),email,phone:x.phone.trim(),focus:x.focus.split(",").map(v=>v.trim()).filter(Boolean)};if(x.id){const p=inv(x.id);if(!p){showToast("수정할 심사역을 찾지 못했습니다.");return}Object.assign(p,values);selectedInvestorId=p.id;save();fillSelects();form.reset();closeInvestorModal();showToast("심사역 정보를 수정했습니다.");render()}else{const p={id:`inv-${Date.now()}`,...values};db.investors.unshift(p);save();fillSelects();form.reset();closeInvestorModal();showToast("심사역을 목록에 추가했습니다.");switchView("investors")}};
+document.getElementById("investorForm").onsubmit=async e=>{
+  e.preventDefault();
+  const form=e.currentTarget;
+  const submitButton=form.querySelector('[type="submit"]');
+  const originalLabel=submitButton.textContent;
+  const x=Object.fromEntries(new FormData(form).entries());
+  const email=x.email.trim();
+  if(email&&db.investors.some(p=>p.id!==x.id&&p.email?.toLowerCase()===email.toLowerCase())){showToast("이미 등록된 이메일입니다.");return}
+  const currentPerson=x.id?inv(x.id):null;
+  const firm=x.firm.trim();
+  const firmChanged=!currentPerson||normalizeFirmName(currentPerson.firm)!==normalizeFirmName(firm);
+  const values={name:x.name.trim(),firm,fund:x.fund.trim(),operatorType:firmChanged?operatorTypeForFirm(firm):x.operatorType.trim(),title:x.title.trim(),email,phone:x.phone.trim(),memo:(x.memo||"").trim(),focus:x.focus.split(",").map(v=>v.trim()).filter(Boolean)};
+  const restoredName=normalizeInvestorPersonName(values.name);
+  const restoredFirm=canonicalInvestorFirmKey(values.firm);
+  db.deletedInvestorIdentities=(db.deletedInvestorIdentities||[]).filter(identity=>{const [nameKey,firmKey]=String(identity).split("::");if(nameKey!==restoredName)return true;return Boolean(restoredFirm)&&firmKey!==restoredFirm});
+  let person;
+  let isNew=false;
+  if(x.id){
+    person=inv(x.id);
+    if(!person){showToast("수정할 심사역을 찾지 못했습니다.");return}
+    Object.assign(person,values);
+    selectedInvestorId=person.id;
+  }else{
+    person={id:`inv-${Date.now()}`,...values};
+    db.investors.unshift(person);
+    selectedInvestorId=person.id;
+    isNew=true;
+  }
+  submitButton.disabled=true;
+  submitButton.textContent="저장 중…";
+  try{
+    await saveAndSync();
+    fillSelects();
+    form.reset();
+    closeInvestorModal();
+    showToast(isNew?"심사역을 목록에 추가했습니다.":"심사역 정보를 저장했습니다.");
+    if(isNew)switchView("investors");
+    else render();
+  }catch(error){
+    console.error("Investor save failed",error);
+    showToast("저장에 실패했습니다. 연결 상태를 확인한 뒤 다시 시도해 주세요.");
+  }finally{
+    submitButton.disabled=false;
+    submitButton.textContent=originalLabel;
+  }
+};
 document.getElementById("companyForm").onsubmit=e=>{
   e.preventDefault();
   const form=e.currentTarget;
@@ -488,6 +720,11 @@ document.getElementById("companyForm").onsubmit=e=>{
   }
 };
 document.getElementById("investorSearch").oninput=e=>{const value=e.target.value.trim();const selected=db.investors.find(p=>investorSearchLabel(p)===value||p.name===value);document.getElementById("investorId").value=selected?.id||"";e.target.setCustomValidity("")};
+document.getElementById("investorForm").elements.firm.onchange=e=>{
+  const form=e.currentTarget.form;
+  if(normalizeFirmName(e.currentTarget.value)===normalizeFirmName(form.dataset.originalFirm||""))return;
+  form.elements.operatorType.value=operatorTypeForFirm(e.currentTarget.value);
+};
 document.getElementById("meetingForm").onsubmit=e=>{e.preventDefault();const x=Object.fromEntries(new FormData(e.currentTarget).entries());const selectedInvestor=db.investors.find(p=>p.id===x.investorId)||db.investors.find(p=>investorSearchLabel(p)===x.investorSearch.trim()||p.name===x.investorSearch.trim());if(!selectedInvestor){const searchInput=document.getElementById("investorSearch");searchInput.setCustomValidity("검색 결과에서 심사역을 선택해 주세요.");searchInput.reportValidity();return}db.meetings.unshift({id:`mtg-${Date.now()}`,companyId:x.companyId,investorId:selectedInvestor.id,date:x.date,type:x.type,investmentStatus:x.investmentStatus,followupStatus:x.followupStatus,followupDate:x.followupDate,amount:Number(x.amount)||0,paymentStatus:x.paymentStatus||"미지급",updatedAt:today(),memo:x.memo});save();e.currentTarget.reset();closeMeetingModal();showToast("미팅 이력에 저장했습니다. 모든 보기에 반영됩니다.");switchView("meetings")};
 fillSelects();bindSideNav();restoreRoute();window.addEventListener("popstate",restoreRoute);
 document.addEventListener("click",e=>{const add=e.target.closest("[data-add-pocketday]");if(add){openPocketdayModal();return}const edit=e.target.closest("[data-edit-pocketday]");if(edit)openPocketdayModal(edit.dataset.editPocketday)});

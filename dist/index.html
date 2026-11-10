@@ -9,11 +9,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="./styles.css?v=20261029-investor-firms" />
+    <link rel="stylesheet" href="./styles.css?v=20261110-investor-delete" />
     <link rel="stylesheet" href="./pocketday-company-search.css?v=20261026" />
     <link rel="stylesheet" href="./reviewer-payments.css?v=20261028-reviewer-search" />
     <link rel="stylesheet" href="./investor-list-readable.css?v=20261029-investor-filter-arrows" />
-    <link rel="stylesheet" href="./investor-preferences.css?v=20261026-investor-dashboard" />
+    <link rel="stylesheet" href="./investor-preferences.css?v=20261109-fund-tooltip-wrap" />
     <link rel="stylesheet" href="./readable-typography.css?v=20261029-company-list-no-ceo" />
     <style>.nav-item[data-view="pipeline"],.nav-item[data-view="followups"],#sideNav .nav-label:last-of-type{display:none!important}</style>
   </head>
@@ -149,12 +149,13 @@
             <label><span>소속 투자사</span><input name="firm" placeholder="예: 포켓벤처스" /></label>
             <label><span>이메일</span><input name="email" type="email" placeholder="name@company.com" /></label>
             <label><span>연락처</span><input name="phone" type="tel" placeholder="010-0000-0000" /></label>
+            <label class="form-wide investor-fund-field"><span>펀드</span><textarea name="fund" rows="5" placeholder="펀드명과 주요 내용을 줄바꿈하여 입력해 주세요."></textarea></label>
+            <label><span>직책</span><input name="title" placeholder="예: 수석 심사역" /></label>
             <label><span>운영사 종류</span><input name="operatorType" placeholder="예: 팁스, 스케일업" /></label>
             <label><span>목록 표시</span><select name="marker"><option value="">표시 없음</option><option value="yellow">🟡 화이트</option><option value="red">🔴 블랙</option></select></label>
-            <label><span>펀드</span><input name="fund" placeholder="예: 포켓 성장펀드 1호" /></label>
-            <label><span>직책</span><input name="title" placeholder="예: 수석 심사역" /></label>
             <label class="form-wide"><span>관심 라운드</span><input name="rounds" placeholder="예: Seed, Pre-A, Series A (쉼표로 구분)" /></label>
             <label class="form-wide"><span>관심 분야</span><input name="focus" placeholder="예: SaaS, AI, 바이오 (쉼표로 구분)" /></label>
+            <label class="form-wide investor-memo-field"><span>메모</span><textarea name="memo" rows="4" placeholder="심사역 관련 참고사항을 자유롭게 입력해 주세요."></textarea></label>
           </div>
           <div class="modal-actions"><button type="button" class="ghost-button" data-close-investor-modal>취소</button><button type="submit" class="primary-button" id="investorSubmitLabel">심사역 목록에 저장</button></div>
         </form>
@@ -198,7 +199,7 @@
           <input name="companyName" type="hidden" />
           <div class="form-grid">
             <label><span>후속 미팅</span><select name="followupStatus"><option>미확인</option><option>없음</option><option>예정</option><option>진행 중</option><option>완료</option></select></label>
-            <label><span>투자 상태</span><select name="investmentStatus"><option>-</option><option>미확인</option><option>모니터링</option><option>미팅</option><option>진행중</option><option>투자완료</option><option>보육중</option></select></label>
+            <label><span>투자 상태</span><select name="investmentStatus"><option>-</option><option>미확인</option><option>모니터링</option><option>미팅</option><option>진행중</option><option>검토종료</option><option>투자완료</option><option>보육중</option></select></label>
             <label class="form-wide"><span>조사 메모</span><textarea name="memo" rows="4" placeholder="확인 내용과 다음 액션을 기록하세요."></textarea></label>
           </div>
           <div class="modal-actions"><button type="button" class="ghost-button" data-close-research-modal>취소</button><button type="submit" class="primary-button">후속 현황 저장</button></div>
@@ -236,19 +237,18 @@
       </aside>
     </div>
 
-    <script src="./shared-sync.js?v=20261102-save-before-pull"></script>
+    <script src="./shared-sync.js?v=20261105-save-confirmation"></script>
     <script src="./houses.js"></script>
     <script src="./pocketday-archive.js?v=20261029-investor-firms"></script>
-  <script src="./app.js?v=20261030-research-search-placeholder"></script>
+  <script src="./app.js?v=20261110-investor-delete"></script>
   <script src="./reviewer-payments.js?v=20261028-reviewer-search"></script>
   <script src="./pocketday-enter-save.js?v=20261030-enter-save"></script>
   <script src="./pocketday-company-search.js?v=20261026"></script>
   <script src="./pocketday-company-links.js?v=20261026"></script>
-  <script src="./investor-preferences.js?v=20261029-investor-filter-arrows"></script>
+  <script src="./investor-preferences.js?v=20261109-fund-tooltip-wrap"></script>
   <script src="./investor-participation-stat.js?v=20261026"></script>
   <script src="./company-remaining-rounds.js?v=20261029-company-list-no-ceo"></script>
   <script src="./company-investor-counts.js?v=20261026-stable"></script>
   </body>
 </html>
-
 
