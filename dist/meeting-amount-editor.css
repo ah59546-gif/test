@@ -1,0 +1,18 @@
+.meeting-amount-cell{min-width:140px;white-space:normal}
+.meeting-amount-trigger{display:inline-flex;align-items:center;justify-content:space-between;gap:12px;min-width:110px;min-height:40px;padding:8px 10px;border:1px solid #e5e8eb;border-radius:10px;background:#fff;color:#191f28;font:inherit;cursor:pointer;white-space:nowrap}
+.meeting-amount-trigger:hover{border-color:#b2d4ff;background:#f5f9ff}
+.meeting-amount-trigger>small{color:#3182f6;font-size:12px!important}
+.meeting-amount-form{display:grid;gap:8px;width:190px;max-width:100%;padding:4px 0}
+.meeting-amount-form>label{font-size:12px!important;font-weight:600;color:#6b7684}
+.meeting-amount-input{display:flex;align-items:center;gap:6px;min-height:44px;padding:0 10px;border:1px solid #d1d6db;border-radius:10px;background:#fff}
+.meeting-amount-input:focus-within{border-color:#3182f6;box-shadow:0 0 0 3px #e8f3ff}
+.meeting-amount-input:has([aria-invalid="true"]){border-color:#f04452;box-shadow:none}
+.meeting-amount-input input{width:100%;min-width:0;height:42px;padding:0;border:0;outline:0;background:transparent;color:#191f28;font:inherit;font-size:15px!important;font-variant-numeric:tabular-nums}
+.meeting-amount-input>span{color:#6b7684;font-size:13px!important}
+.meeting-amount-actions{display:flex;gap:6px}
+.meeting-amount-actions button{min-height:36px;padding:7px 12px;border:0;border-radius:9px;color:#4e5968;background:#f2f4f6;font:inherit;font-size:13px!important;font-weight:600;cursor:pointer}
+.meeting-amount-actions button[type="submit"]{color:#fff;background:#3182f6}
+.meeting-amount-actions button:disabled{opacity:.4;cursor:wait}
+.meeting-amount-error{margin:0;color:#d93643!important;white-space:normal;font-size:12px!important;line-height:1.5}
+.meeting-amount-error[hidden]{display:none}
+
