@@ -1,0 +1,451 @@
+/* Pocket visual layer. Existing templates, routes and data remain unchanged. */
+:root{
+  --ui-blue:#3182f6;
+  --ui-blue-pressed:#1b64da;
+  --ui-blue-soft:#e8f3ff;
+  --ui-text:#191f28;
+  --ui-secondary:#4e5968;
+  --ui-muted:#6b7684;
+  --ui-subtle:#8b95a1;
+  --ui-line:#e5e8eb;
+  --ui-background:#f2f4f6;
+  --ui-surface:#fff;
+  --ui-soft:#f9fafb;
+  --ui-danger:#f04452;
+  --ui-success:#16805d;
+  --ink:var(--ui-text);
+  --muted:var(--ui-muted);
+  --paper:var(--ui-background);
+  --surface:var(--ui-surface);
+  --line:var(--ui-line);
+  --green:var(--ui-blue);
+  --green-dark:var(--ui-blue-pressed);
+  --mint:var(--ui-blue-soft);
+  --lime:#dbeafe;
+  --blue:var(--ui-blue-soft);
+  --shadow:0 12px 32px rgba(25,31,40,.10),0 2px 6px rgba(25,31,40,.04);
+  --ui-ease:cubic-bezier(.22,.61,.36,1);
+}
+html{background:var(--ui-background);scrollbar-gutter:stable}
+body,body[data-role="company"],body[data-role="investor"]{
+  zoom:1;
+  color:var(--ui-text);
+  background:var(--ui-background);
+  font-family:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans KR",sans-serif;
+  font-size:15px;
+  line-height:1.5;
+  letter-spacing:-.005em;
+}
+button,input,textarea,select{font-family:inherit}
+button{transition:background-color 160ms var(--ui-ease),border-color 160ms var(--ui-ease),color 160ms var(--ui-ease)}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid #b2d4ff;outline-offset:3px}
+button:disabled{opacity:.3;cursor:default}
+::selection{color:#191f28;background:#dbeafe}
+::placeholder{color:var(--ui-subtle);opacity:1}
+body .content :where(p,label,time,summary,li,button,input,select,textarea,td),
+body .modal-backdrop :where(p,label,li,button,input,select,textarea),
+body .drawer :where(p,label,li,button,input,select,textarea){font-size:15px!important;line-height:1.5}
+body .content :where(span,em),body .modal-backdrop :where(label>span),body .drawer :where(span){font-size:14px!important}
+body .content :where(small),body .modal-backdrop small,body .drawer small{font-size:13px!important}
+body .content th{font-size:13px!important;font-weight:600;letter-spacing:0}
+body .content :where(.entity-link,.link-button,.text-button){font-size:15px!important}
+body .content :where(.tag,.badge,.operator-type,.research-status,.research-inline-select,.timeline-status){font-size:12px!important}
+body .content :where(.eyebrow,.role-overline,.pocketday-schedule-round small),
+body .content header>div>span.eyebrow{font-size:11px!important;letter-spacing:.06em;color:var(--ui-subtle)}
+body .content :where(h1,h2,h3,h4),.modal h2,.drawer h2{color:var(--ui-text);line-height:1.35;letter-spacing:-.025em}
+body .content h1{font-size:32px;font-weight:700}
+body .content h2{font-size:21px;font-weight:700}
+body .content h3{font-size:17px;font-weight:600}
+body .content :where(p,time,small){color:var(--ui-muted)}
+body .content :where(strong,b){font-weight:650}
+.app-shell,body[data-role="company"] .app-shell,body[data-role="investor"] .app-shell{grid-template-columns:248px minmax(0,1fr)}
+.sidebar,body[data-role="company"] .sidebar,body[data-role="investor"] .sidebar{
+  height:100dvh;padding:32px 16px 20px;color:var(--ui-secondary);background:#fff;border-right:1px solid var(--ui-line);
+}
+.brand,body[data-role="company"] .brand,body[data-role="investor"] .brand{padding:0 14px 32px;gap:12px}
+.brand-mark,body[data-role] .brand-mark,.portal-brand>span{
+  width:40px;height:40px;border-radius:14px;background:var(--ui-blue);color:#fff;font-family:inherit;font-size:23px;font-weight:700;line-height:1;box-shadow:none;
+}
+.brand strong{font-family:inherit;color:var(--ui-text);font-size:17px;letter-spacing:.06em}
+.sidebar .brand span{color:var(--ui-subtle);font-size:12px}
+.nav-list{gap:6px}
+.sidebar .nav-label{margin:24px 16px 8px;color:var(--ui-subtle);font-family:inherit;font-size:10px;font-weight:600;line-height:1.4;letter-spacing:.08em}
+.sidebar .nav-item{min-height:48px;padding:12px 14px;gap:12px;border-radius:14px;color:var(--ui-muted);font-size:15px;font-weight:550}
+.nav-item i{color:var(--ui-subtle);font-size:21px}
+.sidebar .nav-item:hover{color:var(--ui-text);background:var(--ui-background)}
+.sidebar .nav-item.active,body[data-role="company"] .nav-item.active,body[data-role="investor"] .nav-item.active{
+  color:var(--ui-blue);background:var(--ui-blue-soft);box-shadow:none;font-weight:650;
+}
+.nav-item.active i{color:var(--ui-blue)}
+.nav-item b{color:var(--ui-muted);background:#e5e8eb;font-family:inherit;font-size:11px;font-weight:600;line-height:1.4}
+.source-note,.source-note.admin-stats{padding:16px;border-color:var(--ui-line);border-radius:16px;background:var(--ui-soft)}
+.sidebar .source-note strong{color:var(--ui-secondary);font-size:12px}
+.sidebar .source-note p,.admin-stats-head p{color:var(--ui-subtle);font-size:11px}
+.source-note .dot{box-shadow:none}
+.admin-stats-grid{gap:8px;margin-top:16px}
+.admin-stats-grid article{padding:10px 8px;border:0;border-radius:12px;background:#fff}
+.admin-stats-grid article>strong{color:var(--ui-text);font-family:inherit;font-size:23px;font-weight:700;line-height:1.3}
+.admin-stats-grid article>strong em{color:var(--ui-muted);font-size:11px}
+.admin-stats-grid article>span{color:var(--ui-secondary);font-size:11px}
+.admin-stats-grid article>small{color:var(--ui-subtle);font-size:10px}
+.admin-match-progress{background:var(--ui-line)}
+.admin-match-progress i{background:var(--ui-blue)}
+.profile{border-color:var(--ui-line);gap:10px}
+.avatar{color:var(--ui-blue);background:var(--ui-blue-soft);font-family:inherit}
+.sidebar .profile strong{color:var(--ui-secondary);font-size:12px}
+.sidebar .profile span{color:var(--ui-subtle);font-size:11px}
+.profile button{color:var(--ui-muted)}
+.topbar,body[data-role="company"] .topbar,body[data-role="investor"] .topbar{
+  height:80px;padding:16px 40px;gap:20px;background:#fff;border-color:var(--ui-line);backdrop-filter:none;
+}
+.topbar :where(button,input,kbd){font-size:14px}
+.search-box{width:min(480px,42vw);min-height:44px;padding:9px 14px;border:1px solid transparent;border-radius:12px;background:var(--ui-background)}
+.search-box input{background:transparent;font-size:14px}
+.search-box:focus-within{background:#fff;border-color:var(--ui-blue);box-shadow:0 0 0 3px #e8f3ff}
+.search-box>span{color:var(--ui-muted)}
+.search-box kbd{border-color:var(--ui-line);background:#fff;color:var(--ui-subtle);font-size:11px}
+.portal-back{padding:10px 13px;border:0;border-radius:12px;color:var(--ui-secondary);background:var(--ui-background);font-size:13px}
+.ghost-button,.primary-button,.icon-button{min-height:44px;padding:11px 16px;border-radius:12px;font-size:15px;font-weight:600;line-height:1.4;box-shadow:none}
+.ghost-button{color:var(--ui-secondary);background:var(--ui-background);border-color:transparent}
+.ghost-button:hover{background:#e5e8eb;transform:none}
+.primary-button{border-color:transparent;color:#fff;background:var(--ui-blue);box-shadow:none}
+.primary-button:hover{background:var(--ui-blue-pressed);transform:none}
+.top-actions .primary-button{color:var(--ui-blue);background:var(--ui-blue-soft);border-color:transparent;box-shadow:none}
+.top-actions .primary-button:hover{background:#dbeafe}
+.icon-button{display:grid;place-items:center;width:40px;height:40px;min-height:40px;padding:0;color:var(--ui-muted);border:0;background:var(--ui-background)}
+.content{padding:40px;max-width:1800px;margin:0 auto}
+.page-heading{margin-bottom:32px;align-items:center}
+.page-heading h1{margin:8px 0 10px;letter-spacing:-.035em}
+.page-heading p{font-size:15px;color:var(--ui-muted)}
+.eyebrow{font-family:inherit;color:var(--ui-subtle);font-size:11px;font-weight:600;letter-spacing:.06em}
+.updated-chip{padding:8px 12px;gap:6px;border:0;color:var(--ui-muted);background:#fff;box-shadow:none}
+.updated-chip span{width:5px;height:5px;background:var(--ui-blue)}
+.panel,.investor-detail-section,.company-note-panel,.role-section,.pocketday-panel,.pocketday-investor-panel,.ir-files-panel,
+.investor-upcoming,.investor-calendar-shell,.investor-summary,.review-company-panel,.review-event-card{
+  border:1px solid var(--ui-line);border-radius:24px;background:#fff;box-shadow:none;
+}
+.panel-head,.table-toolbar{padding:24px;border-color:var(--ui-line)}
+.panel-head h2{font-size:20px}
+.list-header{gap:20px;margin-bottom:20px;align-items:center}
+.list-header p{color:var(--ui-muted)}
+.list-header-actions,.investor-list-actions{gap:12px}
+.investor-list-actions>span{color:var(--ui-subtle);font-size:13px}
+.investor-list-actions strong{color:var(--ui-text)}
+.stats-grid,.annual-summary-grid,.pocketday-schedule-summary,.investor-detail-stats,.role-stat-grid{gap:20px}
+.stat-card,.annual-summary-grid article,.pocketday-schedule-summary article,.investor-detail-stats article,
+.role-stat-card,.research-summary article{
+  min-width:0;padding:24px;border:1px solid var(--ui-line);border-radius:24px;background:#fff;box-shadow:none;
+}
+.stat-value,.annual-summary-grid article>strong,.pocketday-schedule-summary strong,.investor-detail-stats strong,.role-stat-card strong{
+  margin-top:12px;color:var(--ui-text);font-family:inherit;font-size:32px;font-weight:700;letter-spacing:-.03em;line-height:1.2;font-variant-numeric:tabular-nums;
+}
+.annual-summary-grid article{min-height:154px;transition:border-color 160ms var(--ui-ease)}
+.annual-summary-grid article.active{border-color:var(--ui-blue);box-shadow:none}
+.annual-summary-grid article>span{color:var(--ui-muted)}
+.annual-summary-grid article>p{margin-top:10px}
+.annual-summary-grid article>button,.annual-summary-grid article:nth-child(n)>button,.stat-card i,.research-summary article>i{
+  top:22px;right:22px;width:36px;height:36px;border-radius:12px;color:var(--ui-blue);background:var(--ui-blue-soft);box-shadow:none;font-family:inherit;
+}
+.annual-linkage-page,.pocketday-admin-page{gap:24px}
+.annual-linkage-page{grid-template-columns:minmax(0,1fr)}
+.annual-linkage-page,.annual-insight-grid,.annual-chart-panel,.annual-conversion-panel,.annual-linkage-table{min-width:0;max-width:100%}
+.annual-dashboard-head{padding:24px 28px;border-color:var(--ui-line);border-radius:24px;background:#fff;box-shadow:none}
+.annual-dashboard-head>div:first-child>span,.annual-chart-panel header span,.annual-conversion-panel header span,.annual-linkage-table header span{color:var(--ui-subtle);font-family:inherit;letter-spacing:.06em}
+.annual-dashboard-head h2{margin:6px 0}
+.annual-year-tabs,.company-list-tabs,.pocket-view-tabs{padding:5px;gap:4px;border:0;border-radius:14px;background:var(--ui-background);box-shadow:none}
+.annual-year-tabs button,.company-list-tabs button,.pocket-view-tabs button{padding:10px 16px;min-height:40px;border:0;border-radius:10px;color:var(--ui-muted);font-family:inherit;background:transparent}
+.annual-year-tabs button.active,.company-list-tabs button.active,.pocket-view-tabs button.active{color:var(--ui-text);background:#fff;box-shadow:0 1px 3px rgba(25,31,40,.07)}
+.company-list-tabs button.active b{color:var(--ui-blue);background:var(--ui-blue-soft)}
+.annual-insight-grid,.overview-grid{gap:24px}
+.annual-chart-panel,.annual-conversion-panel,.annual-linkage-table{padding:28px}
+.annual-bar-chart{height:245px;margin-top:28px;padding-top:16px;border:0;background:none}
+.annual-bar i{width:min(28px,70%);border-radius:7px 7px 0 0;background:var(--ui-blue);box-shadow:none}
+.annual-bar b,.annual-bar span{color:var(--ui-subtle)}
+.annual-chart-panel>header>strong{padding:8px 12px;color:var(--ui-muted);background:var(--ui-background);border-radius:10px}
+.annual-gauge{background:conic-gradient(var(--ui-blue) var(--rate),var(--ui-background) 0)}
+.annual-gauge.investment{background:conic-gradient(#74aaff var(--rate),var(--ui-background) 0)}
+.annual-gauge strong,.annual-gauge-grid .annual-gauge strong{font-family:inherit;font-size:26px;font-weight:700;line-height:1.2;color:var(--ui-text)}
+.annual-gauge-grid{gap:16px;margin-top:28px}
+.annual-gauge-grid .annual-gauge{width:132px;height:132px}
+.annual-gauge-grid .annual-gauge:before{width:100px;height:100px}
+.annual-rate-track{background:var(--ui-background)}
+.annual-rate-track i,.annual-investment-rates article:nth-child(2) .annual-rate-track i{background:var(--ui-blue)}
+.annual-status-list>div,.annual-investment-rates article,.annual-empty-status{padding:12px 14px;border:0;border-radius:12px;background:var(--ui-soft);color:var(--ui-muted)}
+.table-wrap{scrollbar-color:#d1d6db transparent}
+table{font-variant-numeric:tabular-nums}
+th{height:50px;padding:14px 20px;color:var(--ui-muted);background:var(--ui-soft);border-color:var(--ui-line)}
+td{padding:20px;border-color:var(--ui-line);color:var(--ui-secondary);line-height:1.5}
+tbody tr:hover{background:#fcfdfe}
+.db-table:has(tbody [data-investor]) th,.db-table:has(th[data-remaining-rounds]) th{padding:15px 14px;font-size:13px!important}
+.db-table:has(tbody [data-investor]) td,.db-table:has(th[data-remaining-rounds]) td{height:76px;padding:18px 20px;font-size:15px!important}
+.db-table:has(tbody [data-investor]) .entity-link,.db-table:has(th[data-remaining-rounds]) .entity-link{font-size:15px!important;color:var(--ui-text)}
+.investor-list-table table{min-width:1040px}
+.investor-list-table td:nth-child(2),.investor-list-table td:nth-child(3){white-space:normal;word-break:keep-all;overflow-wrap:anywhere}
+.investor-list-table th:nth-child(1){width:18%}
+.investor-list-table th:nth-child(2){width:23%}
+.investor-list-table th:nth-child(3){width:10%}
+.investor-list-table th:nth-child(4){width:12%}
+.investor-list-table th:nth-child(5){width:13%}
+.investor-list-table th:nth-child(6),.investor-list-table th:nth-child(7),.investor-list-table th:nth-child(8){width:8%}
+.entity-cell{gap:12px}
+.entity-mark,.db-table:has(tbody [data-investor]) .entity-mark,.db-table:has(th[data-remaining-rounds]) .entity-mark{width:40px;height:40px;border-radius:14px;color:var(--ui-blue);background:var(--ui-blue-soft);font-family:inherit;font-size:12px!important}
+.entity-link{color:var(--ui-text);font-weight:600}
+.entity-link:hover{color:var(--ui-blue);text-decoration:none}
+.entity-cell small{color:var(--ui-subtle)}
+.operator-type,.operator-type.type-립스,.operator-type.type-특화,.operator-type.type-스케일업{padding:4px 7px;border:0;border-radius:6px;color:var(--ui-muted);background:var(--ui-background);font-weight:550}
+.tag{padding:5px 8px;color:var(--ui-secondary);background:var(--ui-background);border-radius:8px}
+.investor-header-filter{gap:8px}
+.investor-filter-trigger{width:26px;height:26px;color:var(--ui-subtle);border:0;border-radius:8px;background:transparent}
+.investor-filter-trigger:hover,.investor-filter-trigger.is-active{color:var(--ui-blue);background:var(--ui-blue-soft)}
+.investor-fund-presence{width:34px;height:34px;border-radius:12px;font-size:13px}
+.investor-fund-tooltip{padding:18px 20px;border:0;border-radius:16px;color:#fff;background:var(--ui-text);font-size:14px;font-weight:500;box-shadow:var(--shadow)}
+.content .company-list-type-badge.external{color:var(--ui-muted);background:var(--ui-background)}
+.content .company-list-type-badge.pocket{color:var(--ui-blue);background:var(--ui-blue-soft)}
+.company-remaining-select,.company-payment-select,.status-select{height:40px;border-color:var(--ui-line);border-radius:10px;font-weight:550}
+.pocketday-year-tabs button{min-height:42px;padding:10px 18px;border-color:var(--ui-line);border-radius:12px;color:var(--ui-muted);box-shadow:none}
+.pocketday-year-tabs button.active{color:var(--ui-blue);border-color:#d3e6ff;background:var(--ui-blue-soft);box-shadow:none}
+.pocketday-schedule-summary article{padding:24px 28px}
+.pocketday-schedule-panel{padding:28px}
+.pocketday-schedule-panel>header{gap:20px;padding-bottom:24px;border-color:var(--ui-line)}
+.pocketday-schedule-panel>header span,.pocketday-next-copy>span{color:var(--ui-subtle);letter-spacing:.06em}
+.pocketday-schedule-panel>header h2{margin-top:6px}
+.pocketday-schedule-list article{grid-template-columns:84px 160px minmax(0,1fr) 64px 64px;gap:20px;padding:24px 0;border-color:var(--ui-line)}
+.pocketday-schedule-round strong{color:var(--ui-blue)}
+.pocketday-schedule-info h3{color:var(--ui-text)}
+.pocketday-schedule-info time{color:var(--ui-muted)}
+.pocketday-schedule-companies .pocketday-company-link,.pocketday-next-copy .pocketday-company-link,.pocketday-schedule-companies span{padding:7px 11px;color:var(--ui-secondary);background:var(--ui-background)}
+.pocketday-schedule-companies .pocketday-company-link:hover{color:var(--ui-blue);background:var(--ui-blue-soft)}
+.pocketday-schedule-investors{padding-top:12px;margin-top:14px;border-color:var(--ui-line);border-top-style:solid}
+.pocketday-schedule-investors summary{color:var(--ui-blue);font-weight:600}
+.pocketday-schedule-investors ul{padding:16px;border-radius:14px;background:var(--ui-soft)}
+.pocketday-schedule-investors li{padding:3px 0}
+.pocketday-edit-button,.research-edit-button,.operation-type-row button,.operation-type-add button,.outline-action{min-height:40px;padding:8px 12px;border:0;border-radius:10px;color:var(--ui-blue);background:var(--ui-blue-soft);font-weight:600;box-shadow:none}
+.pocketday-next-card,.review-event-card,.company-meeting-hero,.investor-detail-hero{background:#fff;border-color:var(--ui-line);border-radius:24px;box-shadow:none}
+.pocketday-next-icon,.review-event-icon,.role-stat-icon{color:var(--ui-blue);background:var(--ui-blue-soft);border-radius:16px;box-shadow:none}
+.investor-detail-page{width:min(1280px,100%);padding:0 0 40px}
+.investor-detail-back{min-height:42px;padding:10px 14px;margin-bottom:24px;border:0;border-radius:12px;color:var(--ui-secondary);background:#fff;font-weight:600}
+.investor-detail-hero{padding:32px}
+.investor-detail-actions{top:32px;right:32px;gap:10px}
+.investor-detail-avatar,.drawer-avatar{width:80px;height:80px;border-radius:24px;color:var(--ui-blue);background:var(--ui-blue-soft);font-family:inherit;font-size:24px;box-shadow:none}
+.investor-detail-identity{gap:20px;margin-top:16px}
+.investor-detail-identity h1{margin:0;font-size:32px}
+.investor-detail-identity p{margin-top:8px;color:var(--ui-muted)}
+.investor-detail-delete,.company-hero-actions .company-delete-button{min-height:44px;padding:10px 14px;border:0;border-radius:12px;color:var(--ui-danger);background:#fff0f1;font-weight:600}
+.investor-detail-delete:hover,.company-hero-actions .company-delete-button:hover{background:#ffe3e6}
+.investor-detail-stats{margin:24px 0}
+.investor-detail-stats article{padding:24px;background:#fff}
+.investor-detail-stats span{margin-top:10px;color:var(--ui-muted)}
+.investor-detail-section{padding:28px;margin-top:24px}
+.investor-detail-section>header{margin-bottom:24px}
+.investor-info-grid.full-page{gap:16px}
+.investor-info-grid.full-page .investor-info-card{min-height:108px;padding:20px;border:0;border-radius:16px;background:var(--ui-soft)}
+.investor-info-card>i{width:36px;height:36px;border-radius:12px;color:var(--ui-blue);background:var(--ui-blue-soft)}
+.investor-info-grid.full-page .investor-info-card small{color:var(--ui-subtle);font-size:13px!important}
+.investor-info-grid.full-page .investor-info-card strong{margin-top:6px;color:var(--ui-text);font-size:16px;font-weight:550;overflow-wrap:anywhere}
+.investor-info-grid.full-page .investor-fund-card,.investor-info-grid.full-page .investor-memo-card{background:var(--ui-soft)}
+.investor-info-empty{color:var(--ui-subtle)}
+.investor-pocketday-list,.investor-history-list,.pocketday-detail-list article{border-color:var(--ui-line)}
+.investor-pocketday-list>article{padding:24px 0;border-color:var(--ui-line)}
+.investor-pocketday-companies>button,.investor-pocketday-companies>span,.pocketday-investor-list>div{padding:12px;border:0;border-radius:14px;background:var(--ui-soft)}
+.investor-pocketday-companies i,.pocketday-investor-list i,.pocketday-round{color:var(--ui-blue);background:var(--ui-blue-soft);border-radius:12px}
+.pocketday-investor-list strong{color:var(--ui-text)}
+.pocketday-investor-list small{color:var(--ui-muted)}
+.research-summary{gap:12px;margin-bottom:24px}
+.research-summary article{padding:20px;border-radius:16px;background:var(--ui-soft);border:0}
+.research-summary article>i{width:36px;height:36px;flex:0 0 auto}
+.research-summary strong{font-size:26px;color:var(--ui-text);font-variant-numeric:tabular-nums}
+.research-summary article:nth-child(3)>i{color:var(--ui-blue);background:var(--ui-blue-soft)}
+.research-summary article.needs>i{color:var(--ui-danger);background:#fff0f1}
+.research-toolbar{gap:16px;margin-bottom:20px}
+.research-toolbar>label,.pocketday-investor-search label{height:48px;border-color:transparent;border-radius:12px;background:var(--ui-background)}
+.research-filters{gap:6px}
+.research-filters button{height:40px;padding:8px 12px;border:0;border-radius:10px;background:var(--ui-background);color:var(--ui-muted);font-weight:550}
+.research-filters button.active{color:var(--ui-blue);background:var(--ui-blue-soft);box-shadow:none}
+.research-table-wrap{border-color:var(--ui-line);border-radius:16px}
+.research-table th{background:var(--ui-soft)}
+.research-table td{padding:18px 16px;border-color:var(--ui-line)}
+.research-table .research-memo{white-space:pre-wrap;overflow-wrap:anywhere;color:var(--ui-muted)!important}
+.research-inline-select select{height:34px;font-size:13px!important;font-weight:550}
+.company-note-panel,.pocketday-panel,.pocketday-investor-panel,.ir-files-panel{padding:28px}
+.company-note-icon{color:var(--ui-blue);background:var(--ui-blue-soft);border-radius:12px}
+.company-note-panel footer button{min-height:44px;padding:10px 18px;border-radius:12px;background:var(--ui-blue);box-shadow:none}
+.company-note-panel header b{color:var(--ui-muted);background:var(--ui-background)}
+.company-detail-remaining-status,.company-detail-type-select{border-color:var(--ui-line);border-radius:14px;background:var(--ui-soft)}
+.company-detail-type-select>div{background:var(--ui-background)}
+.company-detail-type-select button[aria-pressed="true"]{color:var(--ui-blue);background:#fff;box-shadow:0 1px 3px rgba(25,31,40,.06)}
+.modal-backdrop,.drawer-backdrop{background:rgba(25,31,40,.42);backdrop-filter:none}
+.modal{padding:32px;border-radius:24px;box-shadow:var(--shadow);max-height:calc(100dvh - 48px)}
+.modal-head h2{font-size:26px;margin-top:8px}
+.modal-intro{margin:12px 0 28px;color:var(--ui-muted);line-height:1.6}
+.form-grid{gap:20px 18px}
+.form-grid label{gap:8px;color:var(--ui-secondary);font-weight:550}
+#investorModal .form-grid label>span{color:var(--ui-secondary);font-weight:600}
+.form-grid input,.form-grid select,.form-grid textarea,.company-note-panel textarea{min-height:48px;padding:12px 14px;border:1px solid var(--ui-line);border-radius:12px;color:var(--ui-text);background:var(--ui-soft);font-size:15px;line-height:1.6;transition:border-color 160ms var(--ui-ease),background 160ms var(--ui-ease)}
+.form-grid textarea,.company-note-panel textarea{min-height:112px;resize:vertical}
+.form-grid :where(input,select,textarea):focus,.company-note-panel textarea:focus{border-color:var(--ui-blue);background:#fff;box-shadow:0 0 0 3px var(--ui-blue-soft)}
+.investor-fund-field textarea{min-height:176px}
+.investor-memo-field textarea{min-height:132px}
+.modal-actions{gap:10px;margin-top:28px}
+.modal-actions button{min-height:48px;padding:12px 20px;border-radius:14px}
+.drawer{padding:32px;box-shadow:-8px 0 32px rgba(25,31,40,.1)}
+.toast{padding:14px 20px;border-radius:14px;color:#fff;background:var(--ui-text);box-shadow:0 8px 24px rgba(25,31,40,.16);font-size:15px}
+body[data-role="company"] .content,body[data-role="investor"] .content{background:var(--ui-background)}
+.role-dashboard{padding:36px 40px 48px}
+.role-greeting{margin-bottom:28px}
+.role-greeting h1{font-size:30px}
+.role-stat-card{--stat-bg:#fff;--stat-accent:var(--ui-blue);padding:24px;min-height:130px}
+.role-stat-card.blue,.role-stat-card.mint,.role-stat-card.purple{--stat-bg:#fff;--stat-accent:var(--ui-blue)}
+.role-stat-card.is-link:hover{transform:none;border-color:#c4dcfd;box-shadow:none}
+.role-stat-card span{color:var(--ui-secondary)}
+.role-stat-card p{margin-top:8px;color:var(--ui-subtle)}
+.role-section{margin-top:24px;padding:28px}
+.role-section-head{margin-bottom:20px}
+.role-section-head span,.investor-dashboard .role-section-head span{color:var(--ui-subtle);font-family:inherit;letter-spacing:.06em}
+.role-meeting-card{padding:20px;border-color:var(--ui-line);border-radius:16px;background:var(--ui-soft)}
+.calendar-head button{width:36px;height:36px;border:0;border-radius:10px;background:var(--ui-background)}
+.calendar-grid{border-color:var(--ui-line);border-radius:16px}
+.cal-cell{border-color:var(--ui-line)}
+.company-identity,.linked-investor-bar,.investor-dashboard-selector{border-color:var(--ui-line);border-radius:16px;background:#fff;box-shadow:none}
+.company-identity>span,.linked-investor-profile>i{color:var(--ui-blue);background:var(--ui-blue-soft)}
+.investor-review-page{padding:32px 40px 48px}
+.review-event-icon{background:var(--ui-blue-soft);box-shadow:none}
+.portal-screen{background:var(--ui-background);isolation:auto}
+.portal-screen:before,.portal-orb,.role-card:before{display:none}
+.portal-layout{width:min(1440px,calc(100% - 96px));grid-template-columns:minmax(360px,.8fr) minmax(600px,1.3fr);gap:64px;padding:64px 0}
+.portal-brand{margin-bottom:72px;color:var(--ui-text)}
+.portal-brand strong{font-family:inherit;letter-spacing:.06em}
+.portal-brand small{color:var(--ui-subtle);border-color:var(--ui-line)}
+.portal-screen .portal-eyebrow{color:var(--ui-subtle);font-family:inherit;font-size:11px!important;letter-spacing:.06em}
+.portal-copy h1{color:var(--ui-text);font-size:clamp(40px,3.6vw,56px);line-height:1.3;letter-spacing:-.035em}
+.portal-copy h1 em{color:var(--ui-blue)}
+.portal-screen .portal-lead{color:var(--ui-muted);font-size:17px!important;line-height:1.75}
+.portal-pills span{color:var(--ui-muted);background:#fff;border:0}
+.role-card-grid{gap:16px}
+.role-card{min-height:440px;padding:28px 24px;border:1px solid var(--ui-line);border-radius:24px;background:#fff;box-shadow:none}
+.role-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(25,31,40,.05);border-color:#d1d6db}
+.role-card-icon{width:52px;height:52px;margin-bottom:48px;border-radius:16px;color:var(--ui-blue);background:var(--ui-blue-soft);box-shadow:none}
+.company-card,.investor-card,.admin-card{--card-accent:var(--ui-blue);--card-soft:var(--ui-blue-soft)}
+.portal-screen .role-kicker{color:var(--ui-subtle);font-size:12px!important}
+.role-card h2{font-size:26px;color:var(--ui-text);letter-spacing:-.02em}
+.portal-screen .role-card p,.portal-screen .role-card li{color:var(--ui-muted);font-size:14px!important;line-height:1.6}
+.role-card li:before{color:var(--ui-blue)}
+.portal-screen .role-card button{min-height:48px;padding:12px 16px;border-radius:14px;font-size:15px!important;color:var(--ui-blue);background:var(--ui-blue-soft);box-shadow:none}
+.portal-screen .admin-card button{color:#fff;background:var(--ui-blue)}
+.portal-footer{color:var(--ui-subtle);letter-spacing:0}
+.empty{padding:64px 24px;color:var(--ui-subtle);line-height:1.6}
+@media(min-width:1600px){.content{padding:44px 48px}.topbar{padding-inline:48px}}
+@media(max-width:1280px){
+  .app-shell,body[data-role="company"] .app-shell,body[data-role="investor"] .app-shell{grid-template-columns:220px minmax(0,1fr)}
+  .content,.role-dashboard,.investor-review-page{padding:32px 28px}
+  .topbar,body[data-role="company"] .topbar,body[data-role="investor"] .topbar{padding-inline:28px;gap:12px}
+  .annual-summary-grid{gap:14px}
+  .annual-summary-grid article{padding:22px 18px}
+  .annual-summary-grid article>button{top:18px;right:16px;width:30px;height:30px}
+  .pocketday-schedule-list article{grid-template-columns:70px 130px minmax(0,1fr) 58px 56px;gap:14px}
+  .portal-layout{width:calc(100% - 64px);grid-template-columns:1fr;gap:40px}
+  .portal-copy{text-align:center}.portal-brand{justify-content:center;margin-bottom:40px}.portal-pills{justify-content:center}
+  .portal-copy h1{font-size:44px}.portal-footer{position:static;transform:none;margin:0 auto;padding:20px 0}
+}
+@media(max-width:1023px){
+  .annual-summary-grid,.stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .annual-insight-grid,.overview-grid{grid-template-columns:1fr}
+  .investor-info-grid.full-page{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .top-actions #exportButton{display:none}
+  .search-box{flex:1;width:auto}
+  .role-stat-grid{grid-template-columns:1fr}
+  .investor-detail-actions{position:static;margin-top:24px}
+  .investor-detail-stats:has([data-participation-stat]){grid-template-columns:repeat(2,minmax(0,1fr))}
+  .research-toolbar{grid-template-columns:1fr}
+  .research-filters{overflow:auto}
+}
+@media(max-width:760px){
+  .app-shell,body[data-role="company"] .app-shell,body[data-role="investor"] .app-shell{grid-template-columns:minmax(0,1fr)}
+  .sidebar,body[data-role="company"] .sidebar,body[data-role="investor"] .sidebar{width:260px;height:100dvh;box-shadow:12px 0 32px rgba(25,31,40,.12)}
+  .topbar,body[data-role="company"] .topbar,body[data-role="investor"] .topbar{height:auto;min-height:72px;padding:14px 20px;flex-wrap:wrap;gap:12px}
+  .search-box{order:4;flex-basis:100%;width:100%}
+  .top-actions{width:auto;margin-left:auto}
+  .top-actions button{min-height:40px;padding:9px 12px;font-size:13px}
+  .portal-back{margin-left:0}.mobile-menu{color:var(--ui-secondary)}
+  .content,.role-dashboard,.investor-review-page{padding:28px 20px 40px}
+  body .content h1{font-size:28px}
+  body .content :where(p,label,time,summary,li,button,input,select,textarea,td){font-size:15px!important}
+  body .content :where(span,em,th){font-size:13px!important}
+  .page-heading{gap:16px;margin-bottom:24px}
+  .updated-chip{font-size:12px}
+  .list-header{align-items:flex-start;flex-direction:column;gap:16px}
+  .list-header-actions,.investor-list-actions{align-self:stretch;justify-content:space-between;flex-wrap:wrap}
+  .annual-dashboard-head{padding:24px;align-items:flex-start}
+  .annual-year-tabs{width:auto}.annual-year-tabs button{padding:9px 18px}
+  .annual-summary-grid,.stats-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .annual-summary-grid article,.stat-card{min-height:164px;padding:20px 16px}
+  .annual-summary-grid article>button{top:16px;right:12px;width:26px;height:26px;font-size:14px}
+  .annual-summary-grid article>span{display:block;max-width:calc(100% - 26px);min-height:40px}
+  .annual-summary-grid article>strong{font-size:28px}
+  .annual-chart-panel,.annual-conversion-panel,.annual-linkage-table,.pocketday-schedule-panel{padding:24px 20px}
+  .annual-gauge-grid{gap:12px}.annual-gauge-grid .annual-gauge{width:120px;height:120px}.annual-gauge-grid .annual-gauge:before{width:90px;height:90px}
+  .pocketday-schedule-summary{grid-template-columns:1fr;gap:12px}
+  .pocketday-schedule-summary article{padding:20px 24px}
+  .pocketday-schedule-list article{grid-template-columns:70px minmax(0,1fr);gap:14px;padding:24px 0}
+  .pocketday-schedule-actions{gap:14px}.pocketday-schedule-companies{grid-column:2}
+  .pocketday-next-card{padding:24px}
+  .investor-detail-hero,.investor-detail-section,.company-note-panel,.pocketday-panel,.pocketday-investor-panel,.role-section{padding:24px 20px}
+  .investor-detail-avatar{width:64px;height:64px;border-radius:20px;font-size:21px}
+  .investor-detail-actions{position:static;flex-wrap:wrap;margin-top:24px}
+  .investor-detail-actions .investor-detail-edit{margin:0}
+  .investor-detail-stats{gap:12px}
+  .investor-detail-stats article{padding:20px}
+  .investor-info-grid.full-page{grid-template-columns:1fr}
+  .research-summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .research-summary article{gap:10px;padding:16px 12px;flex-wrap:wrap}
+  .research-summary article>i{width:30px;height:30px}
+  .research-filters{width:100%}.research-filters button{flex:0 0 auto}
+  .pocketday-investor-list>div{min-width:0;width:100%}
+  .modal-backdrop{padding:16px;align-items:end}
+  .modal{padding:28px 24px;border-radius:24px;max-height:calc(100dvh - 32px)}
+  .modal-head h2{font-size:24px}.form-grid{gap:20px}
+  .modal-actions{position:sticky;bottom:-28px;padding:16px 0 4px;background:#fff}
+  .portal-layout{width:calc(100% - 40px);padding:40px 0;gap:32px}
+  .portal-brand{margin-bottom:36px}.portal-copy h1{font-size:36px}
+  .portal-screen .portal-lead{font-size:16px!important}.role-card{min-height:0;padding:28px}
+  .role-card-icon{margin-bottom:24px}.role-card-grid{grid-template-columns:1fr}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+
+/* Detail values and compact controls share the same readable scale. */
+.company-info-grid{gap:12px}
+.investor-dashboard-selector .linked-investor-profile strong,.linked-investor-profile strong{font-size:15px;color:var(--ui-text)}
+.pocket-company-list>strong{font-size:14px;color:var(--ui-secondary)}
+.company-info-grid>div{min-height:78px;padding:16px;border:0;border-radius:14px;background:var(--ui-soft)}
+.company-info-grid strong{color:var(--ui-text);font-size:15px;font-weight:550;white-space:normal;overflow-wrap:anywhere}
+.company-info-grid i{color:var(--ui-blue);font-size:19px}
+.meeting-company-logo{border:1px solid var(--ui-line);border-radius:20px;color:var(--ui-text);background:var(--ui-soft);box-shadow:none;font-family:inherit}
+.meeting-kicker{color:var(--ui-subtle);font-family:inherit;letter-spacing:.06em}
+.company-hero-actions{gap:10px}
+.company-hero-actions .outline-action,.meeting-request-button{min-height:44px;padding:10px 16px;border:0;border-radius:12px;box-shadow:none;font-weight:600}
+.company-hero-actions .outline-action{color:var(--ui-blue);background:var(--ui-blue-soft)}
+.meeting-request-button{color:#fff;background:var(--ui-blue)}
+.company-detail-remaining-status strong{font-size:15px}
+.reviewer-payment-page{gap:24px}
+.reviewer-payment-summary{gap:20px}
+.reviewer-payment-summary article{padding:24px;border-color:var(--ui-line);border-radius:24px;background:#fff}
+.reviewer-payment-summary strong{font-family:inherit;font-size:32px;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.reviewer-payment-summary .unpaid,.reviewer-payment-summary .paid{background:#fff}
+.reviewer-payment-panel>header{padding:28px;border-color:var(--ui-line)}
+.reviewer-payment-delete{min-height:40px;padding:8px 12px;border:0;border-radius:10px;color:var(--ui-danger);background:#fff0f1;font-weight:600}
+.reviewer-payment-type{color:var(--ui-muted);background:var(--ui-background);border-radius:8px}
+.pocketday-company-search{min-height:46px;border-color:transparent;border-radius:12px;background:var(--ui-background)}
+@media(max-width:1280px){
+  .company-meeting-hero{grid-template-columns:minmax(0,1fr)}
+}
+@media(max-width:760px){
+  .company-detail-page.role-dashboard{padding:0}
+  .company-detail-meta-row{grid-template-columns:104px 104px}
+  .company-detail-remaining-status,.company-detail-type-select{width:104px}
+  body .content .company-detail-type-select button{font-size:12px!important;white-space:nowrap}
+  .company-hero-actions{justify-content:flex-start;justify-self:stretch;flex-wrap:wrap}
+  .company-info-grid>div{padding:16px}
+  .reviewer-payment-summary{gap:12px}
+  .reviewer-payment-summary article{padding:20px}
+  .reviewer-payment-panel>header{padding:24px 20px}
+}
+
